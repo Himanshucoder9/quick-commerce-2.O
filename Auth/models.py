@@ -7,6 +7,7 @@ from imagekit.models import ProcessedImageField
 from .managers import UserManager
 from Master.models import Address, TimeStamp
 
+
 # Create your models here.
 
 class User(AbstractUser, PermissionsMixin):
@@ -182,7 +183,7 @@ class Driver(User):
         help_text=_("Upload Pan card.."), )
     vehicle_no = models.CharField(verbose_name=_("vehicle number"), max_length=10)
     approved = models.BooleanField(default=False, verbose_name=_("Approved"))
-    is_free = models.BooleanField(default=True, verbose_name=_("Is Free")
+    is_free = models.BooleanField(default=True, verbose_name=_("Is Free"))
 
     def __str__(self):
         return f"{self.name}"
@@ -193,13 +194,14 @@ class Driver(User):
 
 
 class OTP(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE,verbose_name=_("user"))
-    otp = models.CharField(max_length=6,verbose_name=_("OTP"))
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("user"))
+    otp = models.CharField(max_length=6, verbose_name=_("OTP"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
 
     class Meta:
         verbose_name = _("OTP")
         verbose_name_plural = _("OTPs")
+
 
 class ForgetOTP(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name=_("user"))
