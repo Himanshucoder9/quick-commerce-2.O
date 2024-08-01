@@ -1,246 +1,177 @@
 from django.contrib import admin
-from .models import *
 from django.contrib.auth.admin import UserAdmin
-from django.utils.html import format_html
 from django.contrib.auth.models import Group
-from Auth.models import WareHouse
-# from Product.models import Product
-from rest_framework.authtoken.models import TokenProxy as DRFToken
+from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
-from .send_sms import send_approve_vendor_sms
+from Auth.models import User, CustomAdmin, Customer, WareHouse, Driver
+from Auth.send_sms import send_approve_warehouse_sms
 
 admin.site.unregister(Group)
-admin.site.unregister(DRFToken)
 
 
-@admin.register(User)
-class CustomUserAdmin(UserAdmin):
-    model = User
-    resource_class = User
+# Base User Admin
+class BaseUserAdmin:
     fieldsets = (
         ('User Info', {
-            'fields': (
-                'role', 'name', 'email', 'phone', 'dob', 'gender', 'profile', 'password'),
+            'fields': ('role', 'name', 'email', 'phone', 'dob', 'gender', 'profile',),
         }),
-
-        ('Status', {
-            'fields': (
-                'is_superuser', 'is_staff', 'is_active', 'is_verified',),
+        ('Permissions', {
+            'fields': ('is_superuser', 'is_staff', 'is_active',),
         }),
-
         ('Login Info', {
             'fields': ('last_login', 'date_joined', 'groups', 'user_permissions'),
         }),
-
     )
+    readonly_fields = ('last_login', 'date_joined',)
+    search_fields = ('name', 'email', 'phone', 'role', 'gender')
+    list_filter = ('name', 'email', 'gender', 'phone', 'role', 'is_active')
+    ordering = ('phone',)
+    list_per_page = 15
 
     def _profile(self, obj):
-        if obj.profile:
-            return format_html(
-                '<img src="{}" style="max-width:50px; max-height:50px; border-radius:50%;"/>'.format(obj.profile.url))
-        else:
-            return "No Profile"
+        return format_html(
+            '<img src="{}" style="max-width:50px; max-height:50px; border-radius:50%;"/>'.format(obj.profile.url)
+        ) if obj.profile else "No Profile"
 
     _profile.short_description = 'Profile'
 
-    list_display = (
-        'id', 'name', 'phone', 'email', 'gender', '_profile', 'role', 'is_verified', 'date_joined',)
-    list_filter = ('name', 'email', 'gender', 'phone', 'is_verified', 'role',)
-    readonly_fields = ('last_login', 'date_joined',)
-    search_fields = ('name', 'email', 'phone', 'role',)
+
+@admin.register(User)
+class CustomUserAdmin(BaseUserAdmin, UserAdmin):
+    model = User
+    list_display = ('name', '_profile', 'phone', 'email', 'gender', 'role', 'is_active',)
+
     add_fieldsets = (
         (None, {
-            'fields': (
-                'name', 'email', 'phone', 'dob', 'gender', 'profile', 'role', 'password1', 'password2',)}
-         ),
+            'fields': ('role', 'name', 'email', 'phone', 'gender', 'dob', 'profile', 'password1', 'password2',)
+        }),
     )
-    ordering = ('email',)
-    list_per_page = 10
 
     def save_model(self, request, obj, form, change):
-        if not change:  # This is a new user
+        if not change:  # New user
             if obj.role == User.SUPERUSER:
-                obj.is_staff = True
-                obj.is_active = True
-                obj.is_verified = True
-                obj.is_superuser = True
-
-        else:  # This is an existing user
-            if obj.role == User.SUPERUSER:
-                obj.is_staff = True
-                obj.is_active = True
-                obj.is_verified = True
-                obj.is_superuser = True
-            else:
-                # obj.is_staff = False
-                obj.is_superuser = False
+                obj.is_staff = obj.is_active = obj.is_superuser = True
+        else:  # Update user
+            obj.is_superuser = obj.role == User.SUPERUSER
         obj.save()
 
 
 @admin.register(CustomAdmin)
-class CustomAdminAdmin(ImportExportModelAdmin, UserAdmin):
-
-    def _profile(self, obj):
-        if obj.profile:
-            return format_html(
-                '<img src="{}" style="max-width:50px; max-height:50px; border-radius:50%;"/>'.format(obj.profile.url))
-        else:
-            return "No Profile"
-
-    _profile.short_description = 'Profile'
-
-    list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active', 'date_joined')
-    list_filter = ('is_active',)
-    list_per_page = 10
-
-    fieldsets = (
-        ('Personal info', {'fields': ('name', 'email', 'phone', 'dob', 'gender', 'profile')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
-    )
+class CustomAdminAdmin(BaseUserAdmin, ImportExportModelAdmin):
+    list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active')
 
     add_fieldsets = (
         (None, {
-            'classes': ('wide',),
-            'fields': ('name', 'phone', 'password1', 'password2'),
+            'fields': ('role', 'name', 'email', 'phone', 'gender', 'dob', 'profile', 'password1', 'password2',)
         }),
     )
-
-    search_fields = ('phone', 'name')
-    readonly_fields = ('last_login', 'date_joined')
-    ordering = ('phone',)
-    filter_horizontal = ()
 
     def save_model(self, request, obj, form, change):
         obj.role = User.SUPERUSER
-        if not change:  # This is a new user
-            if obj.role == User.SUPERUSER:
-                obj.is_staff = True
-                obj.is_active = True
-                obj.is_verified = True
-                obj.is_superuser = True
-
-        else:  # This is an existing user
-            if obj.role == User.SUPERUSER:
-                obj.is_staff = True
-                obj.is_active = True
-                obj.is_verified = True
-                obj.is_superuser = True
-
-        obj.save()
-
-
-@admin.register(WareHouse)
-class VendorShopAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    fieldsets = (
-        ('Shop Info', {
-            'fields': (
-                'user', 'vendor_id', 'shop_name', 'license', 'gst_no', 'fssai_no', 'business_category',
-                'operation_area',
-                'shop_image', 'shop_image_owner', "approved",),
-        }),
-
-        ('Identity Details', {
-            'fields': (
-                'identity', 'document',),
-        }),
-
-        ('Address', {
-            'fields': (
-                'building_name', 'street_name', 'zip', 'city', 'state', 'latitude', 'longitude', 'full_address'),
-        }),
-
-    )
-
-    def _shop_image_with_owner(self, obj):
-        if obj.shop_image_owner:
-            return format_html(
-                '<img src="{}" style="max-width:100px; max-height:100px"/>'.format(obj.shop_image_owner.url))
-        else:
-            return "No Image"
-
-    actions = ['approve_vendors', 'disapprove_vendors']
-
-    def approve_vendors(self, request, queryset):
-        queryset.update(approved=True)
-        for vendor in queryset:
-            send_approve_vendor_sms(vendor.user)
-        self.message_user(request, "Selected vendors have been approved and notified by SMS.")
-
-    def disapprove_vendors(self, request, queryset):
-        queryset.update(approved=False)
-        self.message_user(request, "Selected vendors have been disapproved.")
-
-    approve_vendors.short_description = 'Approve selected vendors'
-    disapprove_vendors.short_description = 'Disapprove selected vendors'
-
-    readonly_fields = ['vendor_id', "approved"]
-    list_display = (
-        'user', 'vendor_id', 'shop_name', 'business_category', 'operation_area', '_shop_image_with_owner', "approved")
-    search_fields = ('user__name', 'shop_name', 'identity', 'fssai_no', 'vendor_id', 'operation_area')
-    list_filter = ('business_category', 'approved',)
-    list_per_page = 10
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Customer)
-class CustomerAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    fieldsets = (
-        ('Customer Info', {
-            'fields': ('user',),
+class CustomerAdmin(BaseUserAdmin, ImportExportModelAdmin):
+    list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active', 'approved')
+
+    add_fieldsets = (
+        (None, {
+            'fields': ('role', 'name', 'email', 'phone', 'gender', 'dob', 'profile', 'password1', 'password2',)
         }),
     )
 
-    # Function to get user email
-    def user_email(self, obj):
-        return obj.user.email
 
-    user_email.short_description = 'Email'
+@admin.register(WareHouse)
+class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    fieldsets = (
+        ('Personal Info', {
+            'fields': ('role', 'name', 'email', 'phone', 'dob', 'gender', 'profile'),
+        }),
+        ('WareHouse Info', {
+            'fields': ('warehouse_id', 'warehouse_name', 'license', 'gst_no', 'fssai_no', 'operation_area',
+                       'warehouse_image', 'warehouse_image_owner',),
+        }),
+        ('Identity Details', {
+            'fields': ('identity', 'document',),
+        }),
+        ('Address', {
+            'fields': ('building_name', 'street_name', 'zip', 'city', 'state', 'full_address', 'latitude', 'longitude'),
+        }),
+        ('Permissions', {
+            'fields': ('is_superuser', 'is_staff', 'is_active', 'approved'),
+        }),
+        ('Login Info', {
+            'fields': ('last_login', 'date_joined', 'groups', 'user_permissions'),
+        }),
+    )
 
-    def user_phone(self, obj):
-        return obj.user.phone
+    def _warehouse_image_owner(self, obj):
+        return format_html(
+            '<img src="{}" style="max-width:100px; max-height:100px"/>'.format(obj.warehouse_image_owner.url)
+        ) if obj.warehouse_image_owner else "No Image"
 
-    user_phone.short_description = 'Phone'
+    actions = ['approve_warehouses', 'disapprove_warehouses']
 
-    def user_name(self, obj):
-        return obj.user.name
+    def approve_warehouses(self, request, queryset):
+        queryset.update(approved=True)
+        for warehouse in queryset:
+            send_approve_warehouse_sms(warehouse.user)
+        self.message_user(request, "Selected warehouses have been approved and notified by SMS.")
 
-    user_name.short_description = 'Full Name'
+    def disapprove_warehouses(self, request, queryset):
+        queryset.update(approved=False)
+        self.message_user(request, "Selected warehouses have been disapproved.")
 
-    def _profile(self, obj):
-        if obj.user.profile:
-            return format_html(
-                '<img src="{}" style="max-width:50px; max-height:50px; border-radius:50%;"/>'.format(
-                    obj.user.profile.url))
-        else:
-            return "No Profile"
+    approve_warehouses.short_description = 'Approve selected warehouses'
+    disapprove_warehouses.short_description = 'Disapprove selected warehouses'
 
-    _profile.short_description = 'Profile'
+    list_display = ('name', 'email', 'phone', 'warehouse_id', 'warehouse_name', 'operation_area',
+                    '_warehouse_image_owner', 'approved')
 
-    list_display = ('user', 'user_name', 'user_phone', 'user_email', '_profile')
-    list_filter = ('user__name', 'user__phone', 'user__email',)
-    search_fields = ('user__name', 'user__phone', 'user__email',)
-    list_per_page = 10
+    search_fields = ('name', 'warehouse_name', 'identity', 'fssai_no', 'warehouse_id', 'operation_area')
+    list_filter = ('approved',)
+
+    add_fieldsets = (
+        ('Personal Info', {
+            'fields': ('role', 'name', 'email', 'phone', 'dob', 'gender', 'profile', 'password1', 'password2',)
+        }),
+        ('WareHouse Info', {
+            'fields': ('warehouse_id', 'warehouse_name', 'license', 'gst_no', 'fssai_no', 'operation_area',
+                       'warehouse_image', 'warehouse_image_owner',),
+        }),
+        ('Identity Details', {
+            'fields': ('identity', 'document',),
+        }),
+        ('Address', {
+            'fields': ('building_name', 'street_name', 'zip', 'city', 'state', 'full_address', 'latitude', 'longitude'),
+        }),
+        ('Permissions', {
+            'fields': ('is_active', 'approved'),
+        }),
+    )
+    ordering = ('phone',)
+    list_per_page = 15
 
 
 @admin.register(Driver)
 class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
+        ('Personal Info', {
+            'fields': ('role', 'warehouse', 'name', 'email', 'phone', 'dob', 'gender', 'profile',),
+        }),
         ('Driver Info', {
-            'fields': (
-                'user', 'vendor', 'license', 'license_front', 'license_back', 'vehicle_no', "approved", 'is_free'),
+            'fields': ('license', 'license_front', 'license_back', 'vehicle_no', 'is_free'),
         }),
-
         ('Identity Details', {
-            'fields': (
-                'aadhar_no', 'pan_no', 'aadhar_document',
-                'pan_document'),
+            'fields': ('aadhar_no', 'pan_no', 'aadhar_document', 'pan_document', 'address'),
         }),
-
-        ('Address', {
-            'fields': (
-                'address',),
+        ('Permissions', {
+            'fields': ('is_superuser', 'is_staff', 'is_active', 'approved'),
         }),
-
+        ('Login Info', {
+            'fields': ('last_login', 'date_joined', 'groups', 'user_permissions'),
+        }),
     )
 
     actions = ['approve_drivers', 'disapprove_drivers']
@@ -248,7 +179,7 @@ class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     def approve_drivers(self, request, queryset):
         queryset.update(approved=True)
         for driver in queryset:
-            send_approve_vendor_sms(driver.user)
+            send_approve_warehouse_sms(driver.user)
         self.message_user(request, "Selected drivers have been approved and notified by SMS.")
 
     def disapprove_drivers(self, request, queryset):
@@ -258,29 +189,24 @@ class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     approve_drivers.short_description = 'Approve selected drivers'
     disapprove_drivers.short_description = 'Disapprove selected drivers'
 
-    def _license_front(self, obj):
-        if obj.license_front:
-            return format_html(
-                '<img src="{}" style="max-width:150px; max-height:150px;"/>'.format(
-                    obj.license_front.url))
-        else:
-            return "No Image"
+    list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active', 'is_free')
+    list_filter = ('name', 'email', 'gender', 'phone', 'role', 'is_active')
+    search_fields = ('name', 'email', 'phone', 'role', 'gender')
 
-    _license_front.short_description = 'License Front'
-
-    def _license_back(self, obj):
-        if obj.license_back:
-            return format_html(
-                '<img src="{}" style="max-width:150px; max-height:150px;"/>'.format(
-                    obj.license_back.url))
-        else:
-            return "No Image"
-
-    _license_back.short_description = 'License Back'
-
-    list_display = (
-        'user', 'vendor', 'license', '_license_front', '_license_back', 'vehicle_no', 'address', "approved", 'is_free')
-    search_fields = ('user__name', 'license',)
-    list_filter = ('approved',)
-    readonly_fields = ('approved',)
-    list_per_page = 10
+    add_fieldsets = (
+        ('Personal Info', {
+            'fields': (
+            'role', 'warehouse', 'name', 'email', 'phone', 'dob', 'gender', 'profile', 'password1', 'password2',)
+        }),
+        ('Driver Info', {
+            'fields': ('license', 'license_front', 'license_back', 'vehicle_no', 'is_free'),
+        }),
+        ('Identity Details', {
+            'fields': ('aadhar_no', 'pan_no', 'aadhar_document', 'pan_document', 'address'),
+        }),
+        ('Permissions', {
+            'fields': ('is_superuser', 'is_staff', 'is_active', 'approved'),
+        }),
+    )
+    ordering = ('phone',)
+    list_per_page = 15

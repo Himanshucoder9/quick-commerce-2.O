@@ -93,7 +93,7 @@ def send_under_review_sms(user):
     )
 
 
-def send_approve_vendor_sms(user):
+def send_approve_warehouse_sms(user):
     client = twilio_client
 
     sms_body = render_to_string(
