@@ -1,10 +1,7 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 from decouple import config
-
-# Prajwal Credentials
-# RAZORPAY_KEY_ID=rzp_test_NqHIxmro5EHkHO
-# RAZORPAY_KEY_SECRET=PVE3M1msR3vfdwEcVlFuMWVX
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,9 +32,9 @@ DEFAULT_APPS = [
 THIRD_PARTY_APPS = [
     'django_ckeditor_5',
     'rest_framework',
+    'rest_framework_simplejwt',
     'drf_spectacular',
     'corsheaders',
-    'rest_framework.authtoken',
     'import_export',
     # 'django_filters',
     # 'django.contrib.admindocs',
@@ -64,7 +61,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'App.middleware.AutoLogout',
 ]
 
 ROOT_URLCONF = 'App.urls'
@@ -180,6 +176,24 @@ EMAIL_PORT = config('EMAIL_PORT')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_SSL = True
+
+REST_FRAMEWORK = {
+    # For Token Authentication
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # SPECTACULAR_SETTINGS
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": ('JWT',),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+}
 
 # Cors Header
 CORS_ALLOWED_ORIGINS = [
@@ -544,24 +558,6 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
-REST_FRAMEWORK = {
-    # For Token Authentication
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-    ),
-    # SPECTACULAR_SETTINGS
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-
-    # 'DEFAULT_THROTTLE_CLASSES': [
-    #     'rest_framework.throttling.AnonRateThrottle',
-    #     'rest_framework.throttling.UserRateThrottle'
-    # ],
-    # 'DEFAULT_THROTTLE_RATES': {
-    #     'anon': '10/day',
-    #     'user': '100/day'
-    # }
-
-}
 
 # SPECTACULAR
 
