@@ -1,14 +1,12 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from Master.myvalidator import numeric, mobile_validator, minimum, maximum, alphanumeric, pan_validator, gst_validator
 from django.core.validators import FileExtensionValidator
 from imagekit.models import ProcessedImageField
-from .managers import UserManager
-from Master.models import Address, TimeStamp
+from Auth.managers import UserManager
+from Master.models import Address
+from Master.myvalidator import (numeric, mobile_validator, minimum, maximum, pan_validator, gst_validator, )
 
-
-# Create your models here.
 
 class User(AbstractUser, PermissionsMixin):
     GENDER_CHOICES = (
@@ -17,16 +15,11 @@ class User(AbstractUser, PermissionsMixin):
         ('Other', 'Other'),
     )
 
-    SUPERUSER = 'SU'
-    warehouse = 'VE'
-    CUSTOMER = 'CU'
-    DRIVER = 'DR'
-
     ROLE_CHOICES = [
-        (SUPERUSER, 'Superuser'),
-        (warehouse, 'warehouse'),
-        (CUSTOMER, 'Customer'),
-        (DRIVER, 'Driver'),
+        ('SU', 'Superuser'),
+        ('WH', 'Warehouse'),
+        ('CU', 'Customer'),
+        ('DR', 'Driver'),
     ]
 
     username = None
@@ -34,34 +27,27 @@ class User(AbstractUser, PermissionsMixin):
     last_name = None
     role = models.CharField(max_length=2, choices=ROLE_CHOICES, verbose_name=_("role"))
     name = models.CharField(max_length=200, verbose_name=_("full name"))
-    email = models.EmailField(verbose_name=_("email address"), max_length=255, blank=True, null=True)
+    email = models.EmailField(max_length=255, blank=True, null=True, verbose_name=_("email address"))
     phone = models.CharField(
-        verbose_name=_("mobile number"),
         max_length=13,
         validators=[mobile_validator],
-        help_text=_("Alphabets and special characters are not allowed (eg.+911234567890)."),
         unique=True,
+        verbose_name=_("mobile number"),
+        help_text=_("Alphabets and special characters are not allowed (eg.+911234567890)."),
     )
-    dob = models.DateField(verbose_name=_("date of birth"), blank=True, null=True)
-    gender = models.CharField(verbose_name=_("gender"), choices=GENDER_CHOICES, max_length=6, blank=True, null=True)
+    dob = models.DateField(blank=True, null=True, verbose_name=_("date of birth"))
+    gender = models.CharField(max_length=6, choices=GENDER_CHOICES, blank=True, null=True, verbose_name=_("gender"))
     profile = ProcessedImageField(
-        verbose_name=_("profile photo"),
         upload_to='auth/user/profile/',
         format='WEBP',
         options={'quality': 50},
-        blank=True, null=True
+        blank=True, null=True,
+        verbose_name=_("profile photo"),
     )
-    is_staff = models.BooleanField(
-        verbose_name=_("staff status"),
-        default=False,
-        help_text=_("Designates whether the user can log into this admin site."),
-    )
-    is_active = models.BooleanField(
-        verbose_name=_("active"),
-        default=False,
-        help_text=_("Designates whether this user should be treated as active. "
-                    "Unselect this instead of deleting accounts."),
-    )
+    is_staff = models.BooleanField(default=False, verbose_name=_("staff status"),
+                                   help_text=_("Designates whether the user can log into this admin site."))
+    is_active = models.BooleanField(default=False, verbose_name=_("active"),
+                                    help_text=_("Unselect this instead of deleting accounts."))
 
     objects = UserManager()
 
@@ -69,20 +55,17 @@ class User(AbstractUser, PermissionsMixin):
     REQUIRED_FIELDS = ["name", "role"]
 
     def __str__(self):
-        return f"{self.name}"
+        return self.name
 
     class Meta:
-        verbose_name = _("All User")
-        verbose_name_plural = _("All Users")
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
 
 
 class CustomAdmin(User):
     class Meta:
         verbose_name = _("Admin")
         verbose_name_plural = _("Admins")
-
-    def __str__(self):
-        return f"{self.name}"
 
 
 class WareHouse(User, Address):
@@ -92,37 +75,40 @@ class WareHouse(User, Address):
         ('Driving Licence', 'Driving Licence'),
         ('Voter ID', 'Voter ID'),
     )
+
     warehouse_id = models.CharField(unique=True, max_length=15, verbose_name="warehouse id")
-    warehouse_name = models.CharField(verbose_name=_("registered warehouse name"), max_length=100)
+    warehouse_name = models.CharField(max_length=100, verbose_name=_("registered warehouse name"))
     license = models.FileField(
-        verbose_name=_("license proof"),
         upload_to='auth/warehouse/license',
         validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
-        help_text=_("Upload license proof.."))
-    identity = models.CharField(choices=IDENTITY_CHOICES, max_length=50, verbose_name=_("identity proof"))
+        verbose_name=_("license proof"),
+        help_text=_("Upload license proof.")
+    )
+    identity = models.CharField(max_length=50, choices=IDENTITY_CHOICES, verbose_name=_("identity proof"))
     document = models.FileField(
-        verbose_name=_("identity document"),
         upload_to='auth/warehouse/identity',
         validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
-        help_text=_("Upload Identity Document..."))
+        verbose_name=_("identity document"),
+        help_text=_("Upload Identity Document.")
+    )
     gst_no = models.CharField(max_length=15, verbose_name=_("GSTIN number"), validators=[gst_validator], blank=True,
                               null=True)
     fssai_no = models.CharField(max_length=15, verbose_name=_("FSSAI number"), blank=True, null=True)
-    operation_area = models.CharField(verbose_name=_("area of operation"), max_length=200)
+    operation_area = models.CharField(max_length=200, verbose_name=_("area of operation"))
     warehouse_image = ProcessedImageField(
-        verbose_name=_("shop image"),
         upload_to='auth/warehouse/shop/',
         format='WEBP',
         options={'quality': 50},
         blank=True, null=True,
+        verbose_name=_("shop image"),
         help_text=_("Upload warehouse image.")
     )
     warehouse_image_owner = ProcessedImageField(
-        verbose_name=_("shop image with owner"),
         upload_to='auth/warehouse/shop_with_owner/',
         format='WEBP',
         options={'quality': 50},
         blank=True, null=True,
+        verbose_name=_("shop image with owner"),
         help_text=_("Upload warehouse image with owner.")
     )
     approved = models.BooleanField(default=False, verbose_name=_("Approved"))
@@ -142,7 +128,7 @@ class WareHouse(User, Address):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"warehouse - {self.name}"
+        return f"Warehouse - {self.warehouse_name}"
 
     class Meta:
         verbose_name = _("Warehouse")
@@ -150,43 +136,44 @@ class WareHouse(User, Address):
 
 
 class Customer(User):
-
-    def __str__(self):
-        return f"{self.name}"
-
     class Meta:
         verbose_name = _("Customer")
         verbose_name_plural = _("Customers")
 
 
 class Driver(User):
-    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"))
+    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name='drivers',
+                                  verbose_name=_("warehouse"))
     address = models.TextField(verbose_name=_("Address"))
-    license = models.CharField(verbose_name=_("DL number"), max_length=16)
-    license_front = models.ImageField(verbose_name=_("license front image"), upload_to='driver/license')
-    license_back = models.ImageField(verbose_name=_("license back image"), upload_to='driver/license')
-    aadhar_no = models.CharField(verbose_name=_("Aadhar Number"), max_length=12,
-                                 validators=[numeric(_("Aadhar Number")), minimum(12, _("Aadhar number")),
-                                             maximum(12, 'Aadhar number')],
-                                 help_text=_("Only numbers are allowed."))
-    pan_no = models.CharField(verbose_name=_("Pan Number"), max_length=10, validators=[pan_validator], blank=True,
-                              null=True)
+    license = models.CharField(max_length=16, verbose_name=_("DL number"))
+    license_front = models.ImageField(upload_to='driver/license', verbose_name=_("license front image"))
+    license_back = models.ImageField(upload_to='driver/license', verbose_name=_("license back image"))
+    aadhar_no = models.CharField(
+        max_length=12,
+        validators=[numeric(_("Aadhar Number")), minimum(12, _("Aadhar number")), maximum(12, 'Aadhar number')],
+        verbose_name=_("Aadhar Number"),
+        help_text=_("Only numbers are allowed.")
+    )
+    pan_no = models.CharField(max_length=10, validators=[pan_validator], blank=True, null=True,
+                              verbose_name=_("Pan Number"))
     aadhar_document = models.FileField(
-        verbose_name=_("Aadhar Document"),
         upload_to='driver/aadhar',
         validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
-        help_text=_("Upload Aadhar card.."), )
+        verbose_name=_("Aadhar Document"),
+        help_text=_("Upload Aadhar card.")
+    )
     pan_document = models.FileField(
-        verbose_name=_("Pan Document"),
         upload_to='driver/pan',
         validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
-        help_text=_("Upload Pan card.."), )
-    vehicle_no = models.CharField(verbose_name=_("vehicle number"), max_length=10)
+        verbose_name=_("Pan Document"),
+        help_text=_("Upload Pan card.")
+    )
+    vehicle_no = models.CharField(max_length=10, verbose_name=_("vehicle number"))
     approved = models.BooleanField(default=False, verbose_name=_("Approved"))
     is_free = models.BooleanField(default=True, verbose_name=_("Is Free"))
 
     def __str__(self):
-        return f"{self.name}"
+        return f"Driver - {self.name}"
 
     class Meta:
         verbose_name = _("Driver")

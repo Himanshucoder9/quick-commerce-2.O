@@ -3,7 +3,7 @@ from .models import *
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.contrib.auth.models import Group
-from Auth.models import VendorShop
+from Auth.models import WareHouse
 # from Product.models import Product
 from rest_framework.authtoken.models import TokenProxy as DRFToken
 from import_export.admin import ImportExportModelAdmin
@@ -130,7 +130,7 @@ class CustomAdminAdmin(ImportExportModelAdmin, UserAdmin):
         obj.save()
 
 
-@admin.register(VendorShop)
+@admin.register(WareHouse)
 class VendorShopAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
         ('Shop Info', {

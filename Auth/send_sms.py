@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from rest_framework import status
 from rest_framework.response import Response
 from App.settings import TEMPLATES_BASE_URL
-from .models import PasswordResetToken
+from .models import ForgetOTP
 from django.core.mail import send_mail
 from django.utils.html import strip_tags
 
@@ -194,7 +194,6 @@ def send_product_restock_email_notification(user, product):
     send_mail(subject, message, email_from, recipient_list)
 
 
-
 def send_product_restock_sms_notification(user, product):
     account_sid = settings.TWILIO_ACCOUNT_SID
     auth_token = settings.TWILIO_AUTH_TOKEN
@@ -203,14 +202,14 @@ def send_product_restock_sms_notification(user, product):
     message = client.messages.create(
         body=f'The product {product.title} is now back in stock. Hurry up!',
         from_=settings.TWILIO_PHONE_NUMBER,
-        to=user.phone 
+        to=user.phone
     )
 
 
 def send_contact_confirmation_email_to_user(name, email, subject):
-        enail_subject = 'Thank you for contacting us!'
-        message = f'Hello {name},\n\nThank you for reaching out. We have received your message with the subject "{subject}". Our team will get back to you shortly.\n\nBest regards,\nYour Company Name'
-        email_from = settings.EMAIL_HOST_USER
-        recipient_list = [email]
-        
-        send_mail(enail_subject, message, email_from, recipient_list)
+    enail_subject = 'Thank you for contacting us!'
+    message = f'Hello {name},\n\nThank you for reaching out. We have received your message with the subject "{subject}". Our team will get back to you shortly.\n\nBest regards,\nYour Company Name'
+    email_from = settings.EMAIL_HOST_USER
+    recipient_list = [email]
+
+    send_mail(enail_subject, message, email_from, recipient_list)
