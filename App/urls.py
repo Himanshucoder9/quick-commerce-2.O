@@ -9,12 +9,12 @@ urlpatterns = [
     path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
     path("ckeditor5/", include('django_ckeditor_5.urls')),
-    path('core/', include('Core.urls')),
+    # path('core/', include('Core.urls')),
     path('auth/', include('Auth.urls')),
-    path('product/', include('Product.urls')),
-    path('vendor/', include('Vendor.urls')),
-    path('delivery/', include('Delivery.urls')),
-    path('notification/', include('Notification.urls')),
+    # path('product/', include('Product.urls')),
+    # path('vendor/', include('Vendor.urls')),
+    # path('delivery/', include('Delivery.urls')),
+    # path('notification/', include('Notification.urls')),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
 
     # Spectacular url

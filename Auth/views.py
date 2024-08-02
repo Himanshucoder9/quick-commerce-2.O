@@ -1,32 +1,23 @@
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from rest_framework import status
 from drf_spectacular.utils import extend_schema
-from .otp_generator import *
-from .models import *
-from .serializers import *
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth.password_validation import validate_password
-from App.settings import TEMPLATES_BASE_URL
-from django.utils import timezone
-from .send_sms import *
-from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
-import datetime
+from Auth.otp_generator import *
+from Auth.models import User, Customer, OTP
+from Auth.serializers import *
+from Auth.send_sms import *
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.generics import RetrieveUpdateAPIView
-from Vendor.serializers import *
-from Delivery.serializers import *
-# from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+
+
+# from Warehouse.serializers import *
+# from Delivery.serializers import *
 
 
 class CustomerRegisterView(APIView):
     @extend_schema(
         request=CustomerRegisterSerializer,
-        responses={201: UserSerializer, 400: 'Invalid credentials'},
+        responses={201: CustomerProfileSerializer, 400: 'Invalid credentials'},
         description="Endpoint for user registration and OTP sending"
     )
     def post(self, request):
@@ -41,12 +32,12 @@ class CustomerRegisterView(APIView):
                 role='CU',
                 is_active=False,
             )
-            user.set_password(data['password'])   
+            user.set_password(data['password'])
             user.save()
 
             otp = generate_otp()
             OTP.objects.create(user=user, otp=otp)
-            
+
             send_otp_customer(user, otp)
 
             if email:
@@ -60,6 +51,7 @@ class CustomerRegisterView(APIView):
             return Response({
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class VerifyOTPView(APIView):
     def post(self, request):
@@ -129,11 +121,11 @@ class LoginView(APIView):
         if user is not None:
             refresh = RefreshToken.for_user(user)
             user_data = CustomerProfileSerializer(user).data
-            
+
             return Response({
                 'message': 'User login successfully!',
                 'access': str(refresh.access_token),
-                'refresh': str(refresh), 
+                'refresh': str(refresh),
                 'user': user_data
             })
 
@@ -162,4 +154,3 @@ class ProfileViewSet(RetrieveUpdateAPIView):
             'message': 'Profile updated successfully!',
             'profile': serializer.data
         }, status=status.HTTP_200_OK)
-

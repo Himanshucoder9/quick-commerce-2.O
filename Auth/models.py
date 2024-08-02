@@ -76,7 +76,7 @@ class WareHouse(User, Address):
         ('Voter ID', 'Voter ID'),
     )
 
-    warehouse_id = models.CharField(unique=True, max_length=15, verbose_name="warehouse id")
+    warehouse_no = models.CharField(unique=True, max_length=15, verbose_name="warehouse id")
     warehouse_name = models.CharField(max_length=100, verbose_name=_("registered warehouse name"))
     license = models.FileField(
         upload_to='auth/warehouse/license',
@@ -142,7 +142,7 @@ class Customer(User):
 
 
 class Driver(User):
-    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name='drivers',
+    warehouse_assigned = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name='drivers',
                                   verbose_name=_("warehouse"))
     address = models.TextField(verbose_name=_("Address"))
     license = models.CharField(max_length=16, verbose_name=_("DL number"))

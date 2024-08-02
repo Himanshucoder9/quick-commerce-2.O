@@ -49,10 +49,10 @@ class CustomUserAdmin(BaseUserAdmin, UserAdmin):
 
     def save_model(self, request, obj, form, change):
         if not change:  # New user
-            if obj.role == User.SUPERUSER:
+            if obj.role == 'SU':
                 obj.is_staff = obj.is_active = obj.is_superuser = True
         else:  # Update user
-            obj.is_superuser = obj.role == User.SUPERUSER
+            obj.is_superuser = obj.role == 'SU'
         obj.save()
 
 
@@ -67,13 +67,13 @@ class CustomAdminAdmin(BaseUserAdmin, ImportExportModelAdmin):
     )
 
     def save_model(self, request, obj, form, change):
-        obj.role = User.SUPERUSER
+        obj.role = 'SU'
         super().save_model(request, obj, form, change)
 
 
 @admin.register(Customer)
 class CustomerAdmin(BaseUserAdmin, ImportExportModelAdmin):
-    list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active', 'approved')
+    list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active',)
 
     add_fieldsets = (
         (None, {
@@ -89,7 +89,7 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             'fields': ('role', 'name', 'email', 'phone', 'dob', 'gender', 'profile'),
         }),
         ('WareHouse Info', {
-            'fields': ('warehouse_id', 'warehouse_name', 'license', 'gst_no', 'fssai_no', 'operation_area',
+            'fields': ('warehouse_no', 'warehouse_name', 'license', 'gst_no', 'fssai_no', 'operation_area',
                        'warehouse_image', 'warehouse_image_owner',),
         }),
         ('Identity Details', {
@@ -126,10 +126,10 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     approve_warehouses.short_description = 'Approve selected warehouses'
     disapprove_warehouses.short_description = 'Disapprove selected warehouses'
 
-    list_display = ('name', 'email', 'phone', 'warehouse_id', 'warehouse_name', 'operation_area',
+    list_display = ('name', 'email', 'phone', 'warehouse_no', 'warehouse_name', 'operation_area',
                     '_warehouse_image_owner', 'approved')
 
-    search_fields = ('name', 'warehouse_name', 'identity', 'fssai_no', 'warehouse_id', 'operation_area')
+    search_fields = ('name', 'warehouse_name', 'identity', 'fssai_no', 'warehouse_no', 'operation_area')
     list_filter = ('approved',)
 
     add_fieldsets = (
@@ -137,7 +137,7 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             'fields': ('role', 'name', 'email', 'phone', 'dob', 'gender', 'profile', 'password1', 'password2',)
         }),
         ('WareHouse Info', {
-            'fields': ('warehouse_id', 'warehouse_name', 'license', 'gst_no', 'fssai_no', 'operation_area',
+            'fields': ('warehouse_no', 'warehouse_name', 'license', 'gst_no', 'fssai_no', 'operation_area',
                        'warehouse_image', 'warehouse_image_owner',),
         }),
         ('Identity Details', {
@@ -158,7 +158,7 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
         ('Personal Info', {
-            'fields': ('role', 'warehouse', 'name', 'email', 'phone', 'dob', 'gender', 'profile',),
+            'fields': ('role', 'warehouse_assigned', 'name', 'email', 'phone', 'dob', 'gender', 'profile',),
         }),
         ('Driver Info', {
             'fields': ('license', 'license_front', 'license_back', 'vehicle_no', 'is_free'),
@@ -188,6 +188,12 @@ class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     approve_drivers.short_description = 'Approve selected drivers'
     disapprove_drivers.short_description = 'Disapprove selected drivers'
+    def _profile(self, obj):
+        return format_html(
+            '<img src="{}" style="max-width:50px; max-height:50px; border-radius:50%;"/>'.format(obj.profile.url)
+        ) if obj.profile else "No Profile"
+
+    _profile.short_description = 'Profile'
 
     list_display = ('name', 'email', 'phone', 'gender', '_profile', 'is_active', 'is_free')
     list_filter = ('name', 'email', 'gender', 'phone', 'role', 'is_active')
@@ -195,8 +201,7 @@ class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     add_fieldsets = (
         ('Personal Info', {
-            'fields': (
-            'role', 'warehouse', 'name', 'email', 'phone', 'dob', 'gender', 'profile', 'password1', 'password2',)
+            'fields': ('role', 'warehouse_assigned', 'name', 'email', 'phone', 'dob', 'gender', 'profile', 'password1', 'password2',)
         }),
         ('Driver Info', {
             'fields': ('license', 'license_front', 'license_back', 'vehicle_no', 'is_free'),
