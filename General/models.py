@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Country(TimeStamp):
+    objects = None
     name = models.CharField(max_length=100, verbose_name=_("country"))
     code = models.CharField(max_length=10, verbose_name=_("country code"))
 
