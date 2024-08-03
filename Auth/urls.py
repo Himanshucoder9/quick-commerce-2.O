@@ -12,6 +12,8 @@ from .views import (
     DriverProfileView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
+    ProfileDeleteRequestView,
+    ProfileDeleteVerifyView
 )
 
 urlpatterns = [
@@ -36,4 +38,8 @@ urlpatterns = [
     # Forget Password
     path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset-request'),
     path('password-reset/verify/', PasswordResetVerifyView.as_view(), name='password-reset-verify'),
+
+    # Delete Profile
+    path('profile-delete/request/', ProfileDeleteRequestView.as_view(), name='delete-profile-request'),
+    path('profile-delete/verify/', ProfileDeleteVerifyView.as_view(), name='delete-profile-verify'),
 ]
