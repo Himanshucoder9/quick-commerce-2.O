@@ -42,7 +42,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'Auth',
-    # 'Core',
+    'General',
     'Master',
     # 'Product',
     # 'Vendor',

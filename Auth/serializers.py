@@ -32,23 +32,9 @@ class WareHouseRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = WareHouse
         fields = (
-            "role",
-            "name",
-            "email",
-            "phone",
-            "dob",
-            "gender",
-            "profile",
-            "warehouse_name",
-            "license",
-            "identity",
-            "document",
-            "gst_no",
-            "fssai_no",
-            "operation_area",
-            "warehouse_image",
-            "warehouse_image_owner",
-            "password",
+            "name", "email","phone","dob","gender", "profile","warehouse_name","license","identity", "document", "gst_no",
+            "fssai_no", "operation_area", "warehouse_image", "warehouse_image_owner","building_name",  "street_name", 
+            "zip", "city", "state", "full_address", "latitude", "longitude" , "password",
         )
 
 
@@ -56,17 +42,17 @@ class WareHouseProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = WareHouse
         fields = (
-            "id", "warehouse_id", "warehouse_name", "name", "email", "phone", "gender", "profile", "dob", "is_active",
+            "id", "warehouse_no", "warehouse_name", "name", "email", "phone", "gender", "profile", "dob", "license", "identity", "document", "gst_no", "fssai_no", "operation_area", "warehouse_image", "warehouse_image_owner","is_active",
             "role")
 
 
 class DriverRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Driver
-        fields = ("name", "email", "phone", "password")
+        fields = ("warehouse_assigned","name", "email", "phone", "dob", "profile", "license", "license_front", "license_back", "aadhar_no", "aadhar_document","pan_no", "pan_document", "vehicle_no","password")
 
 
 class DriverProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Driver
-        fields = ("id", "name", "email", "phone", "gender", "profile", "dob", "is_active", "role")
+        fields = ("id", "warehouse_assigned", "name", "email", "phone", "dob", "profile", "license", "license_front", "license_back", "aadhar_no", "aadhar_document","pan_no", "pan_document", "vehicle_no", "is_active", "role", "approved", "is_free")

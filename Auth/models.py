@@ -76,7 +76,7 @@ class WareHouse(User, Address):
         ('Voter ID', 'Voter ID'),
     )
 
-    warehouse_no = models.CharField(unique=True, max_length=15, verbose_name="warehouse id")
+    warehouse_no = models.CharField(unique=True, max_length=15, verbose_name="warehouse number")
     warehouse_name = models.CharField(max_length=100, verbose_name=_("registered warehouse name"))
     license = models.FileField(
         upload_to='auth/warehouse/license',
@@ -114,16 +114,16 @@ class WareHouse(User, Address):
     approved = models.BooleanField(default=False, verbose_name=_("Approved"))
 
     def save(self, *args, **kwargs):
-        if not self.warehouse_id:
+        if not self.warehouse_no:
             last_object = WareHouse.objects.order_by('-id').first()
-            if last_object and last_object.warehouse_id:
-                last_warehouse_id = last_object.warehouse_id
-                warehouse_id_prefix = last_warehouse_id[:-3]
-                warehouse_id_suffix = last_warehouse_id[-3:]
-                new_suffix = str(int(warehouse_id_suffix) + 1).zfill(3)
-                self.warehouse_id = f"{warehouse_id_prefix}{new_suffix}"
+            if last_object and last_object.warehouse_no:
+                last_warehouse_no = last_object.warehouse_no
+                warehouse_no_prefix = last_warehouse_no[:-3]
+                warehouse_no_suffix = last_warehouse_no[-3:]
+                new_suffix = str(int(warehouse_no_suffix) + 1).zfill(3)
+                self.warehouse_no = f"{warehouse_no_prefix}{new_suffix}"
             else:
-                self.warehouse_id = "WH0001"
+                self.warehouse_no = "WH0001"
 
         super().save(*args, **kwargs)
 
