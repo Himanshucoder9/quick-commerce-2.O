@@ -10,16 +10,16 @@ from Master.myvalidator import (numeric, mobile_validator, minimum, maximum, pan
 
 class User(AbstractUser, PermissionsMixin):
     GENDER_CHOICES = (
-        ('Male', 'Male'),
-        ('Female', 'Female'),
-        ('Other', 'Other'),
+        ("Male", "Male"),
+        ("Female", "Female"),
+        ("Other", "Other"),
     )
 
     ROLE_CHOICES = [
-        ('SU', 'Superuser'),
-        ('WH', 'Warehouse'),
-        ('CU', 'Customer'),
-        ('DR', 'Driver'),
+        ("SU", "Superuser"),
+        ("WH", "Warehouse"),
+        ("CU", "Customer"),
+        ("DR", "Driver"),
     ]
 
     username = None
@@ -38,9 +38,9 @@ class User(AbstractUser, PermissionsMixin):
     dob = models.DateField(blank=True, null=True, verbose_name=_("date of birth"))
     gender = models.CharField(max_length=6, choices=GENDER_CHOICES, blank=True, null=True, verbose_name=_("gender"))
     profile = ProcessedImageField(
-        upload_to='auth/user/profile/',
-        format='WEBP',
-        options={'quality': 50},
+        upload_to="auth/user/profile/",
+        format="WEBP",
+        options={"quality": 50},
         blank=True, null=True,
         verbose_name=_("profile photo"),
     )
@@ -70,24 +70,24 @@ class CustomAdmin(User):
 
 class WareHouse(User, Address):
     IDENTITY_CHOICES = (
-        ('Aadhar Card', 'Aadhar Card'),
-        ('Pan Card', 'Pan Card'),
-        ('Driving Licence', 'Driving Licence'),
-        ('Voter ID', 'Voter ID'),
+        ("Aadhar Card", "Aadhar Card"),
+        ("Pan Card", "Pan Card"),
+        ("Driving Licence", "Driving Licence"),
+        ("Voter ID", "Voter ID"),
     )
 
     warehouse_no = models.CharField(unique=True, max_length=15, verbose_name="warehouse number")
     warehouse_name = models.CharField(max_length=100, verbose_name=_("registered warehouse name"))
     license = models.FileField(
-        upload_to='auth/warehouse/license',
-        validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
+        upload_to="auth/warehouse/license",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf", "png", "jpg", "jpeg", "webp"])],
         verbose_name=_("license proof"),
         help_text=_("Upload license proof.")
     )
     identity = models.CharField(max_length=50, choices=IDENTITY_CHOICES, verbose_name=_("identity proof"))
-    document = models.FileField(
-        upload_to='auth/warehouse/identity',
-        validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
+    identity_document = models.FileField(
+        upload_to="auth/warehouse/identity",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf", "png", "jpg", "jpeg", "webp"])],
         verbose_name=_("identity document"),
         help_text=_("Upload Identity Document.")
     )
@@ -96,18 +96,16 @@ class WareHouse(User, Address):
     fssai_no = models.CharField(max_length=15, verbose_name=_("FSSAI number"), blank=True, null=True)
     operation_area = models.CharField(max_length=200, verbose_name=_("area of operation"))
     warehouse_image = ProcessedImageField(
-        upload_to='auth/warehouse/shop/',
-        format='WEBP',
-        options={'quality': 50},
-        blank=True, null=True,
+        upload_to="auth/warehouse/",
+        format="WEBP",
+        options={"quality": 70},
         verbose_name=_("shop image"),
         help_text=_("Upload warehouse image.")
     )
     warehouse_image_owner = ProcessedImageField(
-        upload_to='auth/warehouse/shop_with_owner/',
-        format='WEBP',
-        options={'quality': 50},
-        blank=True, null=True,
+        upload_to="auth/warehouse/owner/",
+        format="WEBP",
+        options={"quality": 70},
         verbose_name=_("shop image with owner"),
         help_text=_("Upload warehouse image with owner.")
     )
@@ -115,7 +113,7 @@ class WareHouse(User, Address):
 
     def save(self, *args, **kwargs):
         if not self.warehouse_no:
-            last_object = WareHouse.objects.order_by('-id').first()
+            last_object = WareHouse.objects.order_by("-id").first()
             if last_object and last_object.warehouse_no:
                 last_warehouse_no = last_object.warehouse_no
                 warehouse_no_prefix = last_warehouse_no[:-3]
@@ -124,6 +122,11 @@ class WareHouse(User, Address):
                 self.warehouse_no = f"{warehouse_no_prefix}{new_suffix}"
             else:
                 self.warehouse_no = "WH0001"
+
+        if self.warehouse_image:
+            self.warehouse_image.name = f"auth/warehouse/{self.warehouse_no}.webp"
+        if self.warehouse_image_owner:
+            self.warehouse_image_owner.name = f"auth/warehouse/owner/{self.warehouse_no}.webp"
 
         super().save(*args, **kwargs)
 
@@ -142,29 +145,29 @@ class Customer(User):
 
 
 class Driver(User):
-    warehouse_assigned = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name='drivers',
-                                  verbose_name=_("warehouse"))
+    warehouse_assigned = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name="drivers",
+                                           verbose_name=_("warehouse"))
     address = models.TextField(verbose_name=_("Address"))
     license = models.CharField(max_length=16, verbose_name=_("DL number"))
-    license_front = models.ImageField(upload_to='driver/license', verbose_name=_("license front image"))
-    license_back = models.ImageField(upload_to='driver/license', verbose_name=_("license back image"))
+    license_front = models.ImageField(upload_to="driver/license", verbose_name=_("license front image"))
+    license_back = models.ImageField(upload_to="driver/license", verbose_name=_("license back image"))
     aadhar_no = models.CharField(
         max_length=12,
-        validators=[numeric(_("Aadhar Number")), minimum(12, _("Aadhar number")), maximum(12, 'Aadhar number')],
+        validators=[numeric(_("Aadhar Number")), minimum(12, _("Aadhar number")), maximum(12, "Aadhar number")],
         verbose_name=_("Aadhar Number"),
         help_text=_("Only numbers are allowed.")
     )
     pan_no = models.CharField(max_length=10, validators=[pan_validator], blank=True, null=True,
                               verbose_name=_("Pan Number"))
     aadhar_document = models.FileField(
-        upload_to='driver/aadhar',
-        validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
+        upload_to="driver/aadhar",
+        validators=[FileExtensionValidator(allowed_extensions=["doc", "docx", "pdf", "png", "jpg", "jpeg", "webp"])],
         verbose_name=_("Aadhar Document"),
         help_text=_("Upload Aadhar card.")
     )
     pan_document = models.FileField(
-        upload_to='driver/pan',
-        validators=[FileExtensionValidator(allowed_extensions=['doc', 'docx', 'pdf', 'png', 'jpg', 'jpeg', 'webp'])],
+        upload_to="driver/pan",
+        validators=[FileExtensionValidator(allowed_extensions=["doc", "docx", "pdf", "png", "jpg", "jpeg", "webp"])],
         verbose_name=_("Pan Document"),
         help_text=_("Upload Pan card.")
     )

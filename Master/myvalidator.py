@@ -11,16 +11,15 @@ def create_regex_validator(pattern, message):
     return validators.RegexValidator(regex=pattern, message=message)
 
 
-# Phone Validators
-phone_regex = create_regex_validator(
-    r"^989\d{2}\s*?\d{3}\s*?\d{4}$",
-    _("Invalid phone number."),
-)
+def mobile_validator(value):
+    # Define a regex pattern for the phone number
+    pattern = r'^\+?\d{12,12}$'  # Allows optional '+' followed by 10 to 13 digits
 
-mobile_validator = create_regex_validator(
-    r'^\+\d{1,13}$',
-    _('Mobile number must be in the format "+911234567890".'),
-)
+    if not re.match(pattern, value):
+        raise ValidationError(
+            _("Invalid phone number. Ensure it starts with '+91' and contains 10 digits."),
+            code='invalid'
+        )
 
 
 # Unique Merchant ID Generator
