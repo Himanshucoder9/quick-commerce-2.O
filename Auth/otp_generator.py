@@ -3,7 +3,7 @@ import string
 from django.utils import timezone
 from datetime import timedelta
 
-from Auth.models import ForgetOTP
+from Auth.models import ForgetOTP, OTP
 
 
 def generate_otp():
@@ -34,3 +34,25 @@ def verify_otp(user, otp):
         return True
 
     return False
+
+
+def verify_profile_delete_otp(user, otp):
+    try:
+        otp_record = OTP.objects.get(user=user)
+    except OTP.DoesNotExist:
+        return False
+
+    # Check if OTP is expired
+    if timezone.now() > otp_record.created_at + timedelta(minutes=15):
+        otp_record.delete()  # Optionally clean up expired OTP records
+        return False
+
+    # Check if OTP matches
+    if otp_record.otp == otp:
+        otp_record.delete()  # Optionally clean up after successful verification
+        return True
+
+    return False
+
+
+

@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 
-from Auth.otp_generator import generate_otp, store_otp, verify_otp
+from Auth.otp_generator import generate_otp, verify_otp, verify_profile_delete_otp
 from Auth.models import User, Customer, WareHouse, OTP, Driver, ForgetOTP
 from Auth.serializers import (
     CustomerRegisterSerializer, CustomerProfileSerializer,
@@ -249,7 +249,7 @@ class PasswordResetVerifyView(APIView):
         new_password = request.data.get('new_password')
 
         if not phone or not otp or not new_password:
-            return Response({'error': 'Phone  number, OTP, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Phone number, OTP, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(phone=phone)
@@ -263,3 +263,45 @@ class PasswordResetVerifyView(APIView):
         user.save()
 
         return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+
+class ProfileDeleteRequestView(APIView):
+    def post(self, request):
+        phone = request.data.get('phone')
+
+        if not phone:
+            return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(phone=phone)
+        except User.DoesNotExist:
+            return Response({'error': 'No user found with this phone number.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp = generate_otp()
+        # send_otp_to_phone(user.phone, otp)
+        OTP.objects.update_or_create(
+            user=user,
+            defaults={'otp': otp, 'created_at': timezone.now()}
+        )
+
+        return Response({'message': 'OTP sent to your phone number for delete profile.', 'OTP': otp}, status=status.HTTP_200_OK)
+    
+
+class ProfileDeleteVerifyView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        phone = request.data.get('phone')
+        otp = request.data.get('otp')
+
+        if not phone or not otp:
+            return Response({"detail": "Phone number and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(phone=phone).first()
+        if not user:
+            return Response({"detail": "No user found with this phone number."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not verify_profile_delete_otp(user, otp):
+            return Response({"detail": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.delete()
+        return Response({"detail": "User profile deleted successfully."}, status=status.HTTP_200_OK)

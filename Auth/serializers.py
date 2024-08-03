@@ -40,7 +40,7 @@ class WareHouseRegisterSerializer(serializers.ModelSerializer):
         model = WareHouse
         fields = (
             "name", "email", "phone", "dob", "gender", "profile", "warehouse_name", "license", "identity",
-            "document", "gst_no", "fssai_no", "operation_area", "warehouse_image", "warehouse_image_owner",
+            "identity_document", "gst_no", "fssai_no", "operation_area", "warehouse_image", "warehouse_image_owner",
             "building_name", "street_name", "zip", "city", "state", "full_address", "latitude", "longitude", "password",
         )
 
@@ -56,7 +56,7 @@ class WareHouseProfileSerializer(serializers.ModelSerializer):
         model = WareHouse
         fields = (
             "id", "warehouse_no", "warehouse_name", "name", "email", "phone", "gender", "profile", "dob",
-            "license", "identity", "document", "gst_no", "fssai_no", "operation_area", "warehouse_image",
+            "license", "identity", "identity_document", "gst_no", "fssai_no", "operation_area", "warehouse_image",
             "warehouse_image_owner", "is_active", "role"
         )
 
