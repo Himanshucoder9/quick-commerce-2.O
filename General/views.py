@@ -98,7 +98,7 @@ class TermsAndConditionView(BaseRetrieveView):
     serializer_class = TermsAndConditionSerializer
 
 
-class FAQListView(BaseListView):
+class FAQListView(ListAPIView):
     queryset = FAQ.objects.all()
     serializer_class = FAQSerializer
 
