@@ -39,7 +39,7 @@ class BaseUserAdmin:
 @admin.register(User)
 class CustomUserAdmin(BaseUserAdmin, UserAdmin):
     model = User
-    list_display = ('name', '_profile', 'phone', 'email', 'gender', 'role', 'is_active',)
+    list_display = ("id",'name', '_profile', 'phone', 'email', 'gender', 'role', 'is_active',)
 
     add_fieldsets = (
         (None, {
@@ -126,7 +126,7 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     approve_warehouses.short_description = 'Approve selected warehouses'
     disapprove_warehouses.short_description = 'Disapprove selected warehouses'
 
-    list_display = ('name', 'email', 'phone', 'warehouse_no', 'warehouse_name', 'operation_area',
+    list_display = ("id",'name', 'email', 'phone', 'warehouse_no', 'warehouse_name', 'operation_area',
                     '_warehouse_image_owner', 'approved')
 
     search_fields = ('name', 'warehouse_name', 'identity', 'fssai_no', 'warehouse_no', 'operation_area')

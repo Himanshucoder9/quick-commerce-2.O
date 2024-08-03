@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+# from General.models import City, State
 
 # Abstract model for timestamps
 class TimeStamp(models.Model):
@@ -30,12 +30,12 @@ class SEO(models.Model):
 class Address(models.Model):
     building_name = models.CharField(verbose_name=_("building name"), max_length=100, blank=True, null=True)
     street_name = models.CharField(verbose_name=_("street name"), max_length=100, blank=True, null=True)
-    zip = models.CharField(verbose_name=_("zip code"), max_length=100, blank=True, null=True)
-    city = models.CharField(verbose_name=_("city"), max_length=200, blank=True, null=True)
-    state = models.CharField(verbose_name=_("state"), max_length=250, blank=True, null=True)
-    latitude = models.DecimalField(verbose_name=_("latitude"), max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(verbose_name=_("longitude"), max_digits=9, decimal_places=6, blank=True, null=True)
-    full_address = models.TextField(verbose_name=_("full address"), blank=True, null=True)
+    zip = models.CharField(verbose_name=_("zip code"), max_length=100,)
+    city = models.ForeignKey("General.City", on_delete=models.CASCADE, verbose_name=_("city"), )
+    state = models.ForeignKey("General.State", on_delete=models.CASCADE, verbose_name=_("state"), max_length=250,)
+    latitude = models.DecimalField(verbose_name=_("latitude"), max_digits=12, decimal_places=9,)
+    longitude = models.DecimalField(verbose_name=_("longitude"), max_digits=12, decimal_places=9,)
+    full_address = models.TextField(verbose_name=_("full address"),)
 
     class Meta:
         verbose_name = _("Address")
