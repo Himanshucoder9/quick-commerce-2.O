@@ -44,7 +44,8 @@ class ShippingAddress(TimeStamp):
 
 
 class Favorite(TimeStamp):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="favorites", verbose_name=_("customer"))
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="favorites",
+                                 verbose_name=_("customer"))
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="favorites", verbose_name=_("product"))
 
     class Meta:
@@ -95,8 +96,10 @@ class Order(models.Model):
     order_number = models.CharField(max_length=15, verbose_name=_("Order Number"), unique=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="orders", verbose_name=_("customer"))
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("total amount"))
-    shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("shipping address"))
-    order_status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Pending", verbose_name=_("order status"))
+    shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.SET_NULL, null=True, blank=True,
+                                         verbose_name=_("shipping address"))
+    order_status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Pending",
+                                    verbose_name=_("order status"))
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD, verbose_name=_("payment method"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created date"))
 
@@ -121,7 +124,8 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items", verbose_name=_("order"))
-    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name="order_items", verbose_name=_("warehouse"))
+    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name="order_items",
+                                  verbose_name=_("warehouse"))
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name=_("product"))
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("quantity"))
     item_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("item price"))
@@ -152,7 +156,7 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, verbose_name=_("payment method"))
     razorpay_order_id = models.CharField(max_length=200, blank=True, null=True, verbose_name=_("Razorpay Order ID"))
     razorpay_payment_id = models.CharField(max_length=200, blank=True, null=True, verbose_name=_("Razorpay Payment ID"))
-    razorpay_signature = models.CharField(max_length=500, blank=True, null=True, verbose_name=_("Razorpay Signature"))
+    razorpay_payment_status = models.CharField(max_length=50, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("amount"))
     payment_status = models.CharField(choices=PAYMENT_STATUS, max_length=50, verbose_name=_("payment status"))
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name=_("payment date"))
