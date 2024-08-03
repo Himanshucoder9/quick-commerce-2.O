@@ -8,8 +8,8 @@ from django.utils.translation import gettext_lazy as _
 
 class Country(TimeStamp):
     objects = None
-    name = models.CharField(max_length=100, verbose_name=_("country"))
-    code = models.CharField(max_length=10, verbose_name=_("country code"))
+    name = models.CharField(max_length=100, verbose_name=_("country"),unique=True)
+    code = models.CharField(max_length=10, verbose_name=_("country code"),unique=True)
 
     class Meta:
         verbose_name = _("Country")
@@ -20,8 +20,8 @@ class Country(TimeStamp):
 
 
 class State(TimeStamp):
-    name = models.CharField(max_length=200, verbose_name=_("state name"))
-    code = models.CharField(max_length=200, verbose_name=_("state code"))
+    name = models.CharField(max_length=200, verbose_name=_("state name"), unique=True)
+    code = models.CharField(max_length=200, verbose_name=_("state code"), unique=True)
     is_available = models.BooleanField(default=True, verbose_name=_("is available"))
 
     class Meta:

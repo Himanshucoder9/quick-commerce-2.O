@@ -10,8 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 
-from Auth.otp_generator import generate_otp
-from Auth.models import User, Customer, WareHouse, OTP, Driver
+from Auth.otp_generator import generate_otp, store_otp, verify_otp
+from Auth.models import User, Customer, WareHouse, OTP, Driver, ForgetOTP
 from Auth.serializers import (
     CustomerRegisterSerializer, CustomerProfileSerializer,
     LoginSerializer, WareHouseRegisterSerializer,
@@ -139,7 +139,7 @@ class LoginView(APIView):
 
 class UserProfileView(RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
-    http_method_names = ['get', 'patch', 'delete']
+    http_method_names = ['get', 'patch',]
 
     def get_object(self):
         user = self.request.user
@@ -218,3 +218,48 @@ class DriverProfileView(UserProfileView):
         if user.role != 'DR':
             raise PermissionDenied("Authenticated user is not a driver user.")
         return super().get_object()
+
+
+class PasswordResetRequestView(APIView):
+    def post(self, request):
+        phone = request.data.get('phone')
+
+        if not phone:
+            return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(phone=phone)
+        except User.DoesNotExist:
+            return Response({'error': 'No user found with this phone number.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp = generate_otp()
+        # send_otp_to_phone(user.phone, otp)
+        ForgetOTP.objects.update_or_create(
+            user=user,
+            defaults={'otp': otp, 'created_at': timezone.now()}
+        )
+
+        return Response({'message': 'OTP sent to your phone.', 'OTP': otp}, status=status.HTTP_200_OK)
+
+
+class PasswordResetVerifyView(APIView):
+    def post(self, request):
+        phone = request.data.get('phone')
+        otp = request.data.get('otp')
+        new_password = request.data.get('new_password')
+
+        if not phone or not otp or not new_password:
+            return Response({'error': 'Phone  number, OTP, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(phone=phone)
+        except User.DoesNotExist:
+            return Response({'error': 'No user found with this phone number.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not verify_otp(user, otp):
+            return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)

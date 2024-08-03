@@ -10,6 +10,8 @@ from .views import (
     CustomerProfileView,
     WarehouseProfileView,
     DriverProfileView,
+    PasswordResetRequestView,
+    PasswordResetVerifyView,
 )
 
 urlpatterns = [
@@ -30,4 +32,8 @@ urlpatterns = [
     path('profile/', CustomerProfileView.as_view(), name='profile'),
     path('warehouse/profile/', WarehouseProfileView.as_view(), name='warehouse-profile'),
     path('driver/profile/', DriverProfileView.as_view(), name='driver-profile'),
+
+    # Forget Password
+    path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset-request'),
+    path('password-reset/verify/', PasswordResetVerifyView.as_view(), name='password-reset-verify'),
 ]
