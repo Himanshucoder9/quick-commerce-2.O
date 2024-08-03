@@ -143,7 +143,7 @@ class TermsAndCondition(SEO, TimeStamp):
         return self.title
 
 
-class FAQCategory(SEO, TimeStamp):
+class FAQCategory(TimeStamp):
     title = models.CharField(max_length=50, unique=True, verbose_name=_("category title"))
 
     class Meta:
