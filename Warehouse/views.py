@@ -230,13 +230,29 @@ class CategoryBulkUploadView(APIView):
         file = request.FILES['file']
         data = []
 
+        # Define expected column names
+        expected_columns = ['title', 'image_url']
+
         # Handle CSV files
         if file.name.endswith('.csv'):
             decoded_file = file.read().decode('utf-8')
             io_string = io.StringIO(decoded_file)
             reader = csv.DictReader(io_string)
 
+            # Validate columns
+            if reader.fieldnames != expected_columns:
+                return Response(
+                    {"error": f"Invalid CSV columns. Expected: {expected_columns}, Got: {reader.fieldnames}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             for row in reader:
+                for field in expected_columns:
+                    if field not in row or not row[field]:
+                        return Response(
+                            {"error": f"Missing or empty required field '{field}' in CSV."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
                 data.append(row)
 
         # Handle Excel files
@@ -244,12 +260,23 @@ class CategoryBulkUploadView(APIView):
             workbook = openpyxl.load_workbook(file)
             sheet = workbook.active
 
+            # Validate column names in the header row
+            header = [cell.value for cell in sheet[1]]  # Read header row
+            if header != expected_columns:
+                return Response(
+                    {"error": f"Invalid Excel columns. Expected: {expected_columns}, Got: {header}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             for row in sheet.iter_rows(min_row=2, values_only=True):
-                data.append({
-                    'title': row[0],
-                    'image_url': row[1],  # Assuming the image URL is in the second column
-                    'is_deleted': False  # Set is_deleted to False for new uploads
-                })
+                row_data = dict(zip(header, row))
+                for field in expected_columns:
+                    if field not in row_data or not row_data[field]:
+                        return Response(
+                            {"error": f"Missing or empty required field '{field}' in Excel."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                data.append(row_data)
         else:
             return Response({"error": "Unsupported file format. Only .csv and .xlsx are allowed."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -261,70 +288,260 @@ class CategoryBulkUploadView(APIView):
             return Response({"error": "Authenticated user does not have an associated warehouse."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Prepare the response data
+        # Prepare to bulk create or update categories
+        categories_to_create = []
+        categories_to_update = []
         response_data = []
 
-        # Process the data and create or update categories
         for item in data:
-            # Generate slug from title
             slug = slugify(item['title'])
+            image_name = f"{slug}.webp"  # Use appropriate image extension
+            image_path = f"category/image/{image_name}"
 
             # Download the image from the provided URL
-            if 'image_url' in item:
-                image_name = f"{slug}.webp"  # Use appropriate image extension
-                image_path = f"category/image/{image_name}"
+            try:
+                response = requests.get(item['image_url'])
+                response.raise_for_status()  # Raise an error for bad responses
 
-                try:
-                    response = requests.get(item['image_url'])
-                    response.raise_for_status()  # Raise an error for bad responses
-
-                    # Save the image to the default storage
-                    image_content = ContentFile(response.content)
-                    image_file_name = default_storage.save(image_path, image_content)  # Save image to media directory
-                except Exception as e:
-                    return Response({"error": f"Failed to download image from {item['image_url']}: {str(e)}"},
-                                    status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({"error": "Image URL is missing in the uploaded data."},
+                # Save the image to the default storage
+                image_content = ContentFile(response.content)
+                image_file_name = default_storage.save(image_path, image_content)  # Save image to media directory
+            except Exception as e:
+                return Response({"error": f"Failed to download image from {item['image_url']}: {str(e)}"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
+            # Prepare category data for bulk create or update
+            category_data = {
+                'title': item['title'],
+                'warehouse': warehouse,
+                'image': image_file_name,
+                'slug': slug,
+                'is_deleted': False
+            }
+
+            # Check if the category already exists
             try:
-                # Check if the category already exists
-                category, created = Category.objects.get_or_create(
-                    title=item['title'],
-                    warehouse=warehouse,
+                category = Category.objects.get(title=item['title'], warehouse=warehouse)
+
+                # If the category exists, prepare it for update
+                category_data['id'] = category.id
+                categories_to_update.append(category_data)
+            except Category.DoesNotExist:
+                # If it doesn't exist, prepare it for creation
+                categories_to_create.append(category_data)
+
+        # Perform bulk create
+        if categories_to_create:
+            try:
+                created_categories = Category.objects.bulk_create(
+                    [Category(**data) for data in categories_to_create]
+                )
+                for category in created_categories:
+                    response_data.append({
+                        'id': category.id,
+                        'warehouse': category.warehouse.id,
+                        'title': category.title,
+                        'image': category.image.url,
+                        'slug': category.slug,
+                        'created_at': category.created_at,
+                        'updated_at': category.updated_at
+                    })
+            except Exception as e:
+                return Response({"error": f"Error during bulk creation: {str(e)}"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        # Perform bulk update
+        if categories_to_update:
+            try:
+                for category_data in categories_to_update:
+                    category = Category.objects.get(id=category_data['id'])
+
+                    # Delete the old image if it exists
+                    if category.image:
+                        old_image_path = category.image.path
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)  # Delete the old image file
+
+                    # Update category fields
+                    category.image = category_data['image']
+                    category.slug = category_data['slug']
+                    category.is_deleted = category_data['is_deleted']
+                    category.save()  # Save the updated category
+
+                    # Add to response data
+                    response_data.append({
+                        'id': category.id,
+                        'warehouse': category.warehouse.id,
+                        'title': category.title,
+                        'image': category.image.url,
+                        'slug': category.slug,
+                        'created_at': category.created_at,
+                        'updated_at': category.updated_at
+                    })
+            except Exception as e:
+                return Response({"error": f"Error during bulk update: {str(e)}"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        # Return a JSON response with the processed data
+        return Response({"message": "Categories processed successfully.", "data": response_data},
+                        status=status.HTTP_200_OK)
+
+
+
+
+class SubCategoryBulkUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Check if a file is provided
+        if 'file' not in request.FILES:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        file = request.FILES['file']
+        data = []
+
+        # Define expected column names
+        expected_columns = ['title', 'category_id', 'image_url']
+
+        # Handle CSV files
+        if file.name.endswith('.csv'):
+            decoded_file = file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            # Validate columns
+            if reader.fieldnames != expected_columns:
+                return Response(
+                    {"error": f"Invalid CSV columns. Expected: {expected_columns}, Got: {reader.fieldnames}"},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-                # If the category already existed, delete the old image if it exists
-                if not created and category.image:
-                    # Construct the full path to the old image
-                    old_image_path = category.image.path
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)  # Delete the old image file
+            for row in reader:
+                for field in expected_columns:
+                    if field not in row or not row[field]:
+                        return Response(
+                            {"error": f"Missing or empty required field '{field}' in CSV."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                data.append(row)
 
-                # Update or create the category with the new image
-                category.image = image_file_name  # Update the image field
-                category.slug = slug
-                category.is_deleted = False  # Set to False for new uploads
-                category.save()  # Save the category instance
+        # Handle Excel files
+        elif file.name.endswith('.xlsx'):
+            workbook = openpyxl.load_workbook(file)
+            sheet = workbook.active
 
-                # Add to response data
-                response_data.append({
-                    'id': category.id,
-                    'warehouse': category.warehouse.id,
-                    'title': category.title,
-                    'image': category.image.url,
-                    'slug': category.slug,
-                    'created_at': category.created_at,
-                    'updated_at': category.updated_at
-                })
-
-            except IntegrityError:
-                # Handle the case where the title already exists
+            # Validate column names in the header row
+            header = [cell.value for cell in sheet[1]]  # Read header row
+            if header != expected_columns:
                 return Response(
-                    {"error": f"Category with title '{item['title']}' already exists."},
+                    {"error": f"Invalid Excel columns. Expected: {expected_columns}, Got: {header}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                row_data = dict(zip(header, row))
+                for field in expected_columns:
+                    if field not in row_data or not row_data[field]:
+                        return Response(
+                            {"error": f"Missing or empty required field '{field}' in Excel."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                data.append(row_data)
+        else:
+            return Response({"error": "Unsupported file format. Only .csv and .xlsx are allowed."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the warehouse instance for the authenticated user
+        try:
+            warehouse = WareHouse.objects.get(id=request.user.id)
+        except WareHouse.DoesNotExist:
+            return Response({"error": "Authenticated user does not have an associated warehouse."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        response_data = []
+
+        for item in data:
+            slug = slugify(item['title'])
+            image_name = f"{slug}.webp"  # Use appropriate image extension
+            image_path = f"subcategory/image/{image_name}"
+
+            # Download the image from the provided URL
+            try:
+                response = requests.get(item['image_url'])
+                response.raise_for_status()  # Raise an error for bad responses
+
+                # Save the image to the default storage
+                image_content = ContentFile(response.content)
+                image_file_name = default_storage.save(image_path, image_content)  # Save image to media directory
+            except Exception as e:
+                return Response({"error": f"Failed to download image from {item['image_url']}: {str(e)}"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if the category exists
+            try:
+                category = Category.objects.get(id=item['category_id'], warehouse=warehouse)
+
+                # Check if the subcategory already exists
+                try:
+                    subcategory = SubCategory.objects.get(title=item['title'], warehouse=warehouse, category=category)
+
+                    # If it exists, update the subcategory
+                    if subcategory.image:
+                        old_image_path = subcategory.image.path
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)  # Delete the old image file
+
+                    subcategory.image = image_file_name
+                    subcategory.slug = slug
+                    subcategory.is_deleted = False  # Reset is_deleted to False
+                    subcategory.save()  # Save the updated subcategory
+
+                    # Add to response data
+                    response_data.append({
+                        'id': subcategory.id,
+                        'warehouse': subcategory.warehouse.id,
+                        'category': subcategory.category.id,
+                        'title': subcategory.title,
+                        'image': subcategory.image.url,
+                        'slug': subcategory.slug,
+                        'created_at': subcategory.created_at,
+                        'updated_at': subcategory.updated_at
+                    })
+
+                except SubCategory.DoesNotExist:
+                    # If it doesn't exist, create a new subcategory
+                    subcategory_data = SubCategory(
+                        title=item['title'],
+                        warehouse=warehouse,
+                        image=image_file_name,
+                        slug=slug,
+                        is_deleted=False,
+                        category=category
+                    )
+                    subcategory_data.save()  # Save the new subcategory
+
+                    # Add to response data
+                    response_data.append({
+                        'id': subcategory_data.id,
+                        'warehouse': subcategory_data.warehouse.id,
+                        'category': subcategory_data.category.id,
+                        'title': subcategory_data.title,
+                        'image': subcategory_data.image.url,
+                        'slug': subcategory_data.slug,
+                        'created_at': subcategory_data.created_at,
+                        'updated_at': subcategory_data.updated_at
+                    })
+
+            except Category.DoesNotExist:
+                return Response(
+                    {"error": f"Category with id '{item['category_id']}' does not exist."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
         # Return a JSON response with the processed data
-        return Response({"message": "Categories processed successfully.", "data": response_data}, status=status.HTTP_200_OK)
+        return Response({"message": "Subcategories processed successfully.", "data": response_data},
+                        status=status.HTTP_200_OK)
+
+
+
+

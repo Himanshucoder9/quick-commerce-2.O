@@ -14,7 +14,7 @@ from Warehouse.views import (
     CategoryViewSet,
     ProductViewSet,
     SubCategoryViewSet,
-    ProductDisableView, CategoryBulkUploadView,
+    ProductDisableView, CategoryBulkUploadView, SubCategoryBulkUploadView,
 )
 
 # Router configuration for viewsets
@@ -54,4 +54,5 @@ urlpatterns = [
          name='product-detail'),
     path('product/disable/<str:slug>/proid/<str:sku_no>/', ProductDisableView.as_view(), name='product-disable'),
     path('categories/bulk-upload/', CategoryBulkUploadView.as_view(), name='category-bulk-upload'),
+    path('subcategories/bulk-upload/', SubCategoryBulkUploadView.as_view(), name='subcategory-bulk-upload'),
 ]
