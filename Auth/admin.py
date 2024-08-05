@@ -39,7 +39,7 @@ class BaseUserAdmin:
 @admin.register(User)
 class CustomUserAdmin(BaseUserAdmin, UserAdmin):
     model = User
-    list_display = ("id","name", "_profile", "phone", "email", "gender", "role", "is_active",)
+    list_display = ("id", "name", "_profile", "phone", "email", "gender", "role", "is_active",)
 
     add_fieldsets = (
         (None, {
@@ -57,7 +57,7 @@ class CustomUserAdmin(BaseUserAdmin, UserAdmin):
 
 
 @admin.register(CustomAdmin)
-class CustomAdminAdmin(BaseUserAdmin, ImportExportModelAdmin):
+class CustomAdminAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     list_display = ("name", "email", "phone", "gender", "_profile", "is_active")
 
     add_fieldsets = (
@@ -72,7 +72,7 @@ class CustomAdminAdmin(BaseUserAdmin, ImportExportModelAdmin):
 
 
 @admin.register(Customer)
-class CustomerAdmin(BaseUserAdmin, ImportExportModelAdmin):
+class CustomerAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     list_display = ("name", "email", "phone", "gender", "_profile", "is_active",)
 
     add_fieldsets = (
@@ -83,7 +83,7 @@ class CustomerAdmin(BaseUserAdmin, ImportExportModelAdmin):
 
 
 @admin.register(WareHouse)
-class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+class WareHouseAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     fieldsets = (
         ("Personal Info", {
             "fields": ("role", "name", "email", "phone", "dob", "gender", "profile"),
@@ -126,10 +126,11 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     approve_warehouses.short_description = "Approve selected warehouses"
     disapprove_warehouses.short_description = "Disapprove selected warehouses"
 
-    list_display = ("id","name", "email", "phone", "warehouse_no", "warehouse_name", "operation_area",
+    list_display = ("id", "name", "email", "phone", "warehouse_no", "warehouse_name", "operation_area",
                     "_warehouse_image_owner", "approved")
 
     search_fields = ("name", "warehouse_name", "identity", "fssai_no", "warehouse_no", "operation_area")
+    readonly_fields = ("warehouse_no",)
     list_filter = ("approved",)
 
     add_fieldsets = (
@@ -155,7 +156,7 @@ class WareHouseAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
 
 @admin.register(Driver)
-class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     fieldsets = (
         ("Personal Info", {
             "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile",),
@@ -188,6 +189,7 @@ class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     approve_drivers.short_description = "Approve selected drivers"
     disapprove_drivers.short_description = "Disapprove selected drivers"
+
     def _profile(self, obj):
         return format_html(
             "<img src='{}' style='max-width:50px; max-height:50px; border-radius:50%;'/>".format(obj.profile.url)
@@ -201,7 +203,8 @@ class DriverAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     add_fieldsets = (
         ("Personal Info", {
-            "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", "password1", "password2",)
+            "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", "password1",
+                       "password2",)
         }),
         ("Driver Info", {
             "fields": ("license", "license_front", "license_back", "vehicle_no", "is_free"),

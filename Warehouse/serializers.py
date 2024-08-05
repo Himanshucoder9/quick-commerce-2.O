@@ -1,12 +1,17 @@
 from rest_framework import serializers
-
 from General.serializers import CountrySerializer
 from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product
 
 
-# Tax Serializers
-class TaxSerializer(serializers.ModelSerializer):
+# Base Serializers
+class BaseSerializer(serializers.ModelSerializer):
     class Meta:
+        abstract = True
+
+
+# Tax Serializers
+class TaxSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
         model = Tax
         fields = ("id", "rate",)
 
@@ -17,8 +22,8 @@ class FullTaxSerializer(TaxSerializer):
 
 
 # Unit Serializers
-class UnitSerializer(serializers.ModelSerializer):
-    class Meta:
+class UnitSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
         model = Unit
         fields = ("id", "name", "abbreviation")
 
@@ -29,8 +34,8 @@ class FullUnitSerializer(UnitSerializer):
 
 
 # PackagingType Serializers
-class PackagingTypeSerializer(serializers.ModelSerializer):
-    class Meta:
+class PackagingTypeSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
         model = PackagingType
         fields = ("id", "type",)
 
@@ -41,8 +46,8 @@ class FullPackagingTypeSerializer(PackagingTypeSerializer):
 
 
 # Category Serializers
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
+class CategorySerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
         model = Category
         fields = ("id", "warehouse", "title", "image", "slug")
 
@@ -53,16 +58,16 @@ class FullCategorySerializer(CategorySerializer):
 
 
 # SubCategory Serializers
-class SimpleSubCategorySerializer(serializers.ModelSerializer):
-    class Meta:
+class SimpleSubCategorySerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
         model = SubCategory
         fields = ("id", "warehouse", "category", "title", "image", "slug")
 
 
-class SubCategorySerializer(serializers.ModelSerializer):
+class SubCategorySerializer(BaseSerializer):
     category = CategorySerializer(read_only=True)
 
-    class Meta:
+    class Meta(BaseSerializer.Meta):
         model = SubCategory
         fields = ("id", "warehouse", "category", "title", "image", "slug")
 
@@ -73,32 +78,33 @@ class FullSubCategorySerializer(SubCategorySerializer):
 
 
 # Product Serializers
-class SimpleProductSerializer(serializers.ModelSerializer):
-    class Meta:
+class SimpleProductSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
         model = Product
         fields = (
-            "id", "warehouse", "sku_no", "category", "subcategory", "title", "size_unit", "size", "category",
-            "subcategory", "image1",
-            "image2", "image3" "image4", "image5", "cgst", "sgst", "price", "discount", "stock_quantity",
-            "is_available", "slug")
+            "id", "warehouse", "sku_no", "category", "subcategory", "title", "size_unit", "size",
+            "image1", "image2", "image3", "image4", "image5", "cgst", "sgst",
+            "price", "discount", "stock_quantity", "is_available", "slug"
+        )
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductSerializer(BaseSerializer):
     category = CategorySerializer(read_only=True)
     subcategory = SubCategorySerializer(read_only=True)
     size_unit = UnitSerializer(read_only=True)
     cgst = TaxSerializer(read_only=True)
     sgst = TaxSerializer(read_only=True)
 
-    class Meta:
+    class Meta(BaseSerializer.Meta):
         model = Product
         fields = (
-            "id", "warehouse", "sku_no", "category", "subcategory", "title", "size_unit", "size", "category",
-            "subcategory", "image1", "image2", "image3" "image4", "image5", "cgst", "sgst", "price", "discount",
-            "stock_quantity", "is_available", "slug")
+            "id", "warehouse", "sku_no", "category", "subcategory", "title", "size_unit", "size",
+            "image1", "image2", "image3", "image4", "image5", "cgst", "sgst",
+            "price", "discount", "stock_quantity", "is_available", "slug"
+        )
 
 
-class DetailProductSerializer(serializers.ModelSerializer):
+class DetailProductSerializer(BaseSerializer):
     category = CategorySerializer(read_only=True)
     subcategory = SubCategorySerializer(read_only=True)
     size_unit = UnitSerializer(read_only=True)
@@ -107,12 +113,16 @@ class DetailProductSerializer(serializers.ModelSerializer):
     cgst = TaxSerializer(read_only=True)
     sgst = TaxSerializer(read_only=True)
 
-    class Meta:
+    class Meta(BaseSerializer.Meta):
         model = Product
-        fields = "__all__"
         exclude = ("is_active", "reorder_level")
 
 
 class FullProductSerializer(ProductSerializer):
     class Meta(ProductSerializer.Meta):
         fields = "__all__"
+
+
+class ProductDisableSerializer(BaseSerializer):
+    class Meta(ProductSerializer.Meta):
+        fields = ("id", "is_active", "slug", "sku_no")

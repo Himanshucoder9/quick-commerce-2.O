@@ -54,6 +54,7 @@ class Category(TimeStamp):
         options={"quality": 50}, verbose_name=_("category image")
     )
     slug = AutoSlugField(populate_from="title", editable=True, unique=True, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False, verbose_name=_("is deleted"))
 
     class Meta:
         verbose_name = _("Category")
@@ -73,6 +74,7 @@ class SubCategory(TimeStamp):
         options={"quality": 50}, verbose_name="subcategory image"
     )
     slug = AutoSlugField(populate_from="title", editable=True, unique=True, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False, verbose_name=_("is deleted"))
 
     class Meta:
         verbose_name = "Subcategory"
@@ -166,6 +168,7 @@ class Product(SEO, TimeStamp):
     is_available = models.BooleanField(default=True, verbose_name=_("product available"))
     is_active = models.BooleanField(default=True, verbose_name=_("product active"))
     slug = AutoSlugField(populate_from="title", editable=True, unique=True, blank=True, null=True)
+    is_deleted = models.BooleanField(default=False, verbose_name=_("is deleted"))
 
     class Meta:
         verbose_name = _("Product")
