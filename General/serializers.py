@@ -22,7 +22,7 @@ class FullCountrySerializer(CountrySerializer):
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
-        fields = ("id", "name", "abbreviation", "is_available",)
+        fields = ("id", "name", "code", "is_available",)
 
 
 class FullStateSerializer(StateSerializer):

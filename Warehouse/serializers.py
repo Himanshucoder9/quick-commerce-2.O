@@ -72,7 +72,7 @@ class FullSubCategorySerializer(SubCategorySerializer):
         fields = "__all__"
 
 
-# SubCategory Serializers
+# Product Serializers
 class SimpleProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
