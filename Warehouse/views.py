@@ -1,3 +1,13 @@
+import os
+import csv
+import io
+import openpyxl
+from django.utils.text import slugify
+import requests
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db import IntegrityError
+from django.http import HttpResponse
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.views import APIView
@@ -5,6 +15,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from Auth.models import WareHouse
 from Warehouse.serializers import (
     TaxSerializer,
     UnitSerializer,
@@ -205,3 +216,115 @@ class ProductDisableView(APIView):
             serializer = ProductDisableSerializer(product)
             return Response({"message": "Product disabled successfully.", "product": serializer.data})
         return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+# Bulk
+class CategoryBulkUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Check if a file is provided
+        if 'file' not in request.FILES:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        file = request.FILES['file']
+        data = []
+
+        # Handle CSV files
+        if file.name.endswith('.csv'):
+            decoded_file = file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            for row in reader:
+                data.append(row)
+
+        # Handle Excel files
+        elif file.name.endswith('.xlsx'):
+            workbook = openpyxl.load_workbook(file)
+            sheet = workbook.active
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                data.append({
+                    'title': row[0],
+                    'image_url': row[1],  # Assuming the image URL is in the second column
+                    'is_deleted': False  # Set is_deleted to False for new uploads
+                })
+        else:
+            return Response({"error": "Unsupported file format. Only .csv and .xlsx are allowed."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the warehouse instance for the authenticated user
+        try:
+            warehouse = WareHouse.objects.get(id=request.user.id)
+        except WareHouse.DoesNotExist:
+            return Response({"error": "Authenticated user does not have an associated warehouse."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare the response data
+        response_data = []
+
+        # Process the data and create or update categories
+        for item in data:
+            # Generate slug from title
+            slug = slugify(item['title'])
+
+            # Download the image from the provided URL
+            if 'image_url' in item:
+                image_name = f"{slug}.webp"  # Use appropriate image extension
+                image_path = f"category/image/{image_name}"
+
+                try:
+                    response = requests.get(item['image_url'])
+                    response.raise_for_status()  # Raise an error for bad responses
+
+                    # Save the image to the default storage
+                    image_content = ContentFile(response.content)
+                    image_file_name = default_storage.save(image_path, image_content)  # Save image to media directory
+                except Exception as e:
+                    return Response({"error": f"Failed to download image from {item['image_url']}: {str(e)}"},
+                                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"error": "Image URL is missing in the uploaded data."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                # Check if the category already exists
+                category, created = Category.objects.get_or_create(
+                    title=item['title'],
+                    warehouse=warehouse,
+                )
+
+                # If the category already existed, delete the old image if it exists
+                if not created and category.image:
+                    # Construct the full path to the old image
+                    old_image_path = category.image.path
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)  # Delete the old image file
+
+                # Update or create the category with the new image
+                category.image = image_file_name  # Update the image field
+                category.slug = slug
+                category.is_deleted = False  # Set to False for new uploads
+                category.save()  # Save the category instance
+
+                # Add to response data
+                response_data.append({
+                    'id': category.id,
+                    'warehouse': category.warehouse.id,
+                    'title': category.title,
+                    'image': category.image.url,
+                    'slug': category.slug,
+                    'created_at': category.created_at,
+                    'updated_at': category.updated_at
+                })
+
+            except IntegrityError:
+                # Handle the case where the title already exists
+                return Response(
+                    {"error": f"Category with title '{item['title']}' already exists."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Return a JSON response with the processed data
+        return Response({"message": "Categories processed successfully.", "data": response_data}, status=status.HTTP_200_OK)

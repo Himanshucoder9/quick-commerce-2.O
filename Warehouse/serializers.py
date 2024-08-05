@@ -126,3 +126,12 @@ class FullProductSerializer(ProductSerializer):
 class ProductDisableSerializer(BaseSerializer):
     class Meta(ProductSerializer.Meta):
         fields = ("id", "is_active", "slug", "sku_no")
+
+
+# Bulk
+
+
+class CategoryBulkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['title', 'image']
