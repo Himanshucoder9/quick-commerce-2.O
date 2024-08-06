@@ -59,7 +59,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CartItem
-        fields = ["id", "product", "quantity", "item_price"]
+        fields = ("id", "product", "quantity", "item_price")
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -67,13 +67,13 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ["id", "customer", "cart_items"]
+        fields = ("id", "customer", "cart_items")
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ["product", "quantity", "item_price"]
+        fields = ("product", "quantity", "item_price")
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -81,8 +81,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "order_number", "shipping_address", "payment_method", "total_amount", "order_status",
-                  "created_at", "items", ]
+        fields = ("id", "order_number", "shipping_address", "payment_method", "total_amount", "order_status",
+                  "created_at", "items", )
 
     def create(self, validated_data):
         items_data = validated_data.pop("items")
@@ -100,14 +100,14 @@ class DetailOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "order_number", "shipping_address", "payment_method", "total_amount", "order_status",
-                  "created_at", "items", ]
+        fields = ("id", "order_number", "shipping_address", "payment_method", "total_amount", "order_status",
+                  "created_at", "items", )
 
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ["id", "order", "razorpay_order_id", "razorpay_payment_id", "razorpay_payment_status", "amount",
+        fields = ("id", "order", "razorpay_order_id", "razorpay_payment_id", "razorpay_payment_status", "amount",
                   "payment_status",
-                  "payment_method"]
-        read_only_fields = ["razorpay_order_id", ]
+                  "payment_method")
+        read_only_fields = ("razorpay_order_id", )

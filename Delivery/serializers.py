@@ -35,11 +35,11 @@ class DeliveryStatusSerializer(serializers.ModelSerializer):
 
 
 class CustomerDeliveryStatusSerializer(serializers.ModelSerializer):
-    order_number = serializers.CharField(source='orders.first.order_number')
-    delivery_status = serializers.CharField(source='status')
-    driver_name = serializers.CharField(source='driver.name', default="Not assigned")
-    driver_phone = serializers.CharField(source='driver.phone', default="Not assigned")
+    order_number = serializers.CharField(source="orders.first.order_number")
+    delivery_status = serializers.CharField(source="status")
+    driver_name = serializers.CharField(source="driver.name", default="Not assigned")
+    driver_phone = serializers.CharField(source="driver.phone", default="Not assigned")
 
     class Meta:
         model = DeliveryAddress
-        fields = ['order_number', 'delivery_status', 'driver_name', 'driver_phone']
+        fields = ["order_number", "delivery_status", "driver_name", "driver_phone"]

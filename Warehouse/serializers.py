@@ -14,8 +14,9 @@ class BaseSerializer(serializers.ModelSerializer):
 
 # All Warehouse List
 class AllWarehouseSerializer(BaseSerializer):
-    model = WareHouse
-    fields = ("id", "warehouse_no", "warehouse_name", "approved", "is_active", "latitude", "longitude", "city")
+    class Meta(BaseSerializer.Meta):
+        model = WareHouse
+        fields = ("id", "warehouse_no", "warehouse_name", "approved", "is_active", "latitude", "longitude", "city")
 
 
 # Slider
@@ -131,7 +132,7 @@ class DetailProductSerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = Product
-        exclude = ("is_active", "reorder_level")
+        exclude = ("is_active", "reorder_level",)
 
 
 class FullProductSerializer(ProductSerializer):
@@ -146,12 +147,13 @@ class ProductDisableSerializer(BaseSerializer):
 
 # Delivery
 class PendingOrderSerializer(BaseSerializer):
-    shipping_address = "Customer.serializers.ShippingAddressSerializer"
+    shipping_address = serializers.StringRelatedField(source='shipping_address')
 
     class Meta:
         model = Order
         fields = (
-            "id", "order_number", "payment_method", "order_status", "total_amount", "shipping_address", "created_at")
+            "id", "order_number", "payment_method", "order_status", "total_amount", "shipping_address", "created_at"
+        )
 
 
 class AvailableDriverSerializer(serializers.ModelSerializer):

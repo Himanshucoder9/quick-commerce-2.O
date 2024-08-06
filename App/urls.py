@@ -13,7 +13,7 @@ urlpatterns = [
     path('general/', include('General.urls')),
     path('customer/', include('Customer.urls')),
     path('warehouse/', include('Warehouse.urls')),
-    # path('delivery/', include('Delivery.urls')),
+    path('delivery/', include('Delivery.urls')),
     # path('notification/', include('Notification.urls')),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
 
