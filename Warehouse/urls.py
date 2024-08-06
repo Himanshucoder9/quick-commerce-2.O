@@ -49,7 +49,7 @@ urlpatterns = [
 
     # Product endpoints
     path('simple-products/list/<int:warehouse_id>/', SimpleAllProductListView.as_view(), name='simple-products-list'),
-    path('products/list/', AllProductListView.as_view(), name='products-list'),
+    path('products/list/<int:warehouse_id>/', AllProductListView.as_view(), name='products-list'),
 
     # Product detail endpoints
     path('product/detail/<str:slug>/proid/<str:sku_no>/', ProductDetailView.as_view(), name='products-detail'),

@@ -109,6 +109,7 @@ class DeliveryStatusToInTransitView(UpdateAPIView):
     queryset = DeliveryAddress.objects.all()
     serializer_class = DeliveryStatusSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ("patch",)
 
     def update(self, request, *args, **kwargs):
 
@@ -150,6 +151,7 @@ class DeliveryStatusToDeliveredView(UpdateAPIView):
     queryset = DeliveryAddress.objects.all()
     serializer_class = DeliveryStatusSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ("patch",)
 
     def update(self, request, *args, **kwargs):
         driver = request.user
@@ -196,6 +198,7 @@ class ResendDeliveryOTPView(UpdateAPIView):
     queryset = DeliveryAddress.objects.all()
     serializer_class = DeliveryStatusSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ("patch",)
 
     def update(self, request, *args, **kwargs):
         driver = request.user
@@ -230,6 +233,7 @@ class DeliveryStatusToCancelView(UpdateAPIView):
     queryset = DeliveryAddress.objects.all()
     serializer_class = DeliveryStatusSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ("patch",)
 
     def update(self, request, *args, **kwargs):
         driver = request.user
