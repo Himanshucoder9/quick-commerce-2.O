@@ -1,31 +1,32 @@
 import os
 import csv
 import io
+from datetime import timedelta
 import openpyxl
 from django.utils.text import slugify
 import requests
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import IntegrityError
-from django.http import HttpResponse
+from django.utils.timezone import now
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
 from rest_framework.views import APIView
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from Auth.models import WareHouse, Driver
-from Customer.models import Order
+from Customer.models import Order, OrderItem
 from Delivery.models import DeliveryAddress
 from Warehouse.serializers import (
     TaxSerializer, UnitSerializer, PackagingTypeSerializer, CategorySerializer,
     SimpleSubCategorySerializer, SubCategorySerializer, SimpleProductSerializer,
     ProductSerializer, DetailProductSerializer, FullCategorySerializer,
     FullSubCategorySerializer, FullProductSerializer, ProductDisableSerializer,
-    PendingOrderSerializer, AvailableDriverSerializer, DeliveryCreateSerializer
+    PendingOrderSerializer, AvailableDriverSerializer, DeliveryCreateSerializer, AllWarehouseSerializer,
+    SliderSerializer
 )
-from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product
+from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
 
 
 class BaseListView(ListAPIView):
@@ -36,6 +37,20 @@ class BaseListView(ListAPIView):
         if not queryset.exists():
             return Response({"message": f"No {self.serializer_class.Meta.model.__name__.lower()} found."},
                             status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AllWareHouseListView(ListAPIView):
+    serializer_class = AllWarehouseSerializer
+
+    def get_queryset(self):
+        return WareHouse.objects.filter(approved=True, is_active=True)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No warehouse available."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -61,8 +76,15 @@ class PackagingTypeListView(BaseListView):
         return PackagingType.objects.all()
 
 
+class SliderBaseListView(BaseListView):
+    serializer_class = SliderSerializer
+
+    def get_queryset(self):
+        warehouse_id = self.kwargs.get('warehouse_id')
+        return Slider.objects.filter(warehouse_id=warehouse_id)
+
+
 class CategoryBaseListView(BaseListView):
-    """Base view for categories to filter by warehouse ID."""
 
     def get_queryset(self):
         warehouse_id = self.kwargs.get('warehouse_id')
@@ -153,6 +175,19 @@ class BaseModelViewSet(ModelViewSet):
         return Response(f"{self.queryset.model.__name__} deleted successfully", status=status.HTTP_204_NO_CONTENT)
 
 
+class SliderViewSet(ModelViewSet):
+    queryset = Slider.objects.all()
+    serializer_class = SliderSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    def get_object(self):
+        try:
+            return self.queryset.get(warehouse=self.request.user)
+        except self.queryset.model.DoesNotExist:
+            raise NotFound(f"Slider not found.")
+
+
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.all()
     serializer_class = FullCategorySerializer
@@ -219,7 +254,7 @@ class PendingOrdersView(APIView):
         pending_orders = Order.objects.filter(order_status='pending', items__warehouse=warehouse).distinct()
 
         if not pending_orders:
-            return Response({"message": "No orders available for this vendor."}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "No orders available for this warehouse."}, status=status.HTTP_204_NO_CONTENT)
 
         serializer = PendingOrderSerializer(pending_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -284,6 +319,75 @@ class DeliveryAssignCreateView(CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Dashboard
+class WarehouseDashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            warehouse = request.user.warehouse_user
+
+            # Fetch all products and order items for the warehouse
+            products = Product.objects.filter(warehouse=warehouse)
+            order_items = OrderItem.objects.filter(warehouse=warehouse)
+
+            # Calculate metrics
+            total_products = products.count()
+            total_orders = order_items.count()
+            completed_order_items = order_items.filter(order__payment__payment_status='Completed')
+
+            total_revenue = self.calculate_total_revenue(completed_order_items)
+            todays_orders_count, todays_revenue = self.calculate_today_metrics(completed_order_items)
+            past_7_days_orders_count = self.calculate_past_days_metrics(completed_order_items, days=7)
+            this_months_orders_count, this_months_revenue = self.calculate_month_metrics(completed_order_items)
+
+            # Count pending and completed orders
+            pending_orders_count = self.count_orders(warehouse, order_status='pending')
+            completed_orders_count = self.count_orders(warehouse, order_status='completed')
+
+            return Response({
+                "total_products": total_products,
+                "total_orders": total_orders,
+                "todays_orders_count": todays_orders_count,
+                "past_7_days_orders_count": past_7_days_orders_count,
+                "this_months_orders_count": this_months_orders_count,
+                "total_revenue": total_revenue,
+                "todays_revenue": todays_revenue,
+                "this_months_revenue": this_months_revenue,
+                "pending_orders_count": pending_orders_count,
+                "completed_orders_count": completed_orders_count,
+            }, status=status.HTTP_200_OK)
+
+        except WareHouse.DoesNotExist:
+            return Response({"detail": "Warehouse profile not found for this user"}, status=status.HTTP_404_NOT_FOUND)
+
+    def calculate_total_revenue(self, completed_order_items):
+        """Calculate total revenue from completed order items."""
+        return sum(item.item_price for item in completed_order_items)
+
+    def calculate_today_metrics(self, completed_order_items):
+        """Calculate today's orders count and revenue."""
+        today = now().date()
+        today_orders = completed_order_items.filter(order__created_at__date=today)
+        todays_revenue = sum(item.item_price for item in today_orders)
+        return today_orders.count(), todays_revenue
+
+    def calculate_past_days_metrics(self, completed_order_items, days):
+        """Calculate the number of orders in the past specified number of days."""
+        last_days = now() - timedelta(days=days)
+        return completed_order_items.filter(order__created_at__gte=last_days).count()
+
+    def calculate_month_metrics(self, completed_order_items):
+        """Calculate orders count and revenue for the current month."""
+        this_month_start = now().replace(day=1)
+        this_month_orders = completed_order_items.filter(order__created_at__gte=this_month_start)
+        return this_month_orders.count(), sum(item.item_price for item in this_month_orders)
+
+    def count_orders(self, warehouse, order_status):
+        """Count orders for the given warehouse and status."""
+        return Order.objects.filter(order_status=order_status, items__warehouse=warehouse).distinct().count()
 
 
 # Bulk

@@ -15,7 +15,7 @@ from Warehouse.views import (
     ProductViewSet,
     SubCategoryViewSet,
     ProductDisableView, CategoryBulkUploadView, SubCategoryBulkUploadView, PendingOrdersView, AvailableDriverListView,
-    DeliveryAssignCreateView,
+    DeliveryAssignCreateView, AllWareHouseListView, WarehouseDashboardAPIView, SliderBaseListView, SliderViewSet,
 )
 
 # Router configuration for viewsets
@@ -23,10 +23,15 @@ router = DefaultRouter()
 router.register(r'category', CategoryViewSet, basename='category')
 router.register(r'subcategory', SubCategoryViewSet, basename='subcategory')
 router.register(r'products', ProductViewSet, basename='product')
+router.register(r'sliders', SliderViewSet, basename='slider')
 
 urlpatterns = [
     # Include the router URLs
     path('', include(router.urls)),
+
+    # Available Warehouse
+    path('available/list/', AllWareHouseListView.as_view(), name='warehouse-list'),
+    path('dashboard/', WarehouseDashboardAPIView.as_view(), name='dashboard'),
 
     # Tax and Unit endpoints
     path('tax/list/', TaxListView.as_view(), name='tax-list'),
@@ -56,6 +61,9 @@ urlpatterns = [
     path('product/disable/<str:slug>/proid/<str:sku_no>/', ProductDisableView.as_view(), name='product-disable'),
     path('categories/bulk-upload/', CategoryBulkUploadView.as_view(), name='category-bulk-upload'),
     path('subcategories/bulk-upload/', SubCategoryBulkUploadView.as_view(), name='subcategory-bulk-upload'),
+
+    # Slider
+    path('slider/list/<int:warehouse_id>/', SliderBaseListView.as_view(), name='slider-list'),
 
     # Delivery
     path('orders/pending/', PendingOrdersView.as_view(), name='pending-orders'),

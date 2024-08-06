@@ -1,17 +1,30 @@
 from rest_framework import serializers
 
-from Auth.models import Driver
+from Auth.models import Driver, WareHouse
 from Customer.models import Order
 from Customer.serializers import ShippingAddressSerializer
 from Delivery.models import DeliveryAddress
 from General.serializers import CountrySerializer
-from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product
+from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
 
 
 # Base Serializers
 class BaseSerializer(serializers.ModelSerializer):
     class Meta:
         abstract = True
+
+
+# All Warehouse List
+class AllWarehouseSerializer(BaseSerializer):
+    model = WareHouse
+    fields = ("id", "warehouse_no", "warehouse_name", "approved", "is_active", "latitude", "longitude", "city")
+
+
+# Slider
+class SliderSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = Slider
+        fields = "__all__"
 
 
 # Tax Serializers

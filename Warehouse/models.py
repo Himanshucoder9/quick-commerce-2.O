@@ -205,3 +205,36 @@ class Product(SEO, TimeStamp):
             [self.image1, self.image2, self.image3, self.image4, self.image5]) else False
 
         super().save(*args, **kwargs)
+
+
+class Slider(TimeStamp):
+    WEB = 'WEB'
+    TAB = 'TAB'
+    MOBILE = 'MOBILE'
+
+    DEVICE_CHOICES = [
+        (WEB, 'Website'),
+        (TAB, 'Tablet'),
+        (MOBILE, 'Mobile'),
+    ]
+    LEFT = 'L'
+    RIGHT = 'R'
+    CENTER = 'C'
+
+    POSITION_CHOICES = [
+        (LEFT, 'Left'),
+        (RIGHT, 'Right'),
+        (CENTER, 'Center'),
+    ]
+
+    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"),
+                                  related_name="sliders")
+    device = models.CharField(max_length=8, choices=DEVICE_CHOICES, verbose_name='device', default=WEB)
+    image = ProcessedImageField(
+        upload_to='core/banner/',
+        format='WEBP',
+        options={'quality': 20}, verbose_name="banner image"
+    )
+    text = models.CharField(verbose_name='banner text', max_length=200, null=True, blank=True)
+    position = models.CharField(max_length=8, choices=POSITION_CHOICES, verbose_name='position', default=CENTER)
+    url = models.URLField(verbose_name=_("url"), blank=True, null=True)
