@@ -5,7 +5,7 @@ from Customer.models import Order
 from django.utils.translation import gettext_lazy as _
 
 
-class Delivery(TimeStamp):
+class DeliveryAddress(TimeStamp):
     STATUS_CHOICE = (
         ("PROCESSING", "Processing"),
         ("PICKED_UP", "Picked Up"),

@@ -14,7 +14,8 @@ from Warehouse.views import (
     CategoryViewSet,
     ProductViewSet,
     SubCategoryViewSet,
-    ProductDisableView, CategoryBulkUploadView, SubCategoryBulkUploadView,
+    ProductDisableView, CategoryBulkUploadView, SubCategoryBulkUploadView, PendingOrdersView, AvailableDriverListView,
+    DeliveryAssignCreateView,
 )
 
 # Router configuration for viewsets
@@ -55,4 +56,10 @@ urlpatterns = [
     path('product/disable/<str:slug>/proid/<str:sku_no>/', ProductDisableView.as_view(), name='product-disable'),
     path('categories/bulk-upload/', CategoryBulkUploadView.as_view(), name='category-bulk-upload'),
     path('subcategories/bulk-upload/', SubCategoryBulkUploadView.as_view(), name='subcategory-bulk-upload'),
+
+    # Delivery
+    path('orders/pending/', PendingOrdersView.as_view(), name='pending-orders'),
+    path('driver/available/', AvailableDriverListView.as_view(), name='available-drivers'),
+    path('driver/assign/', DeliveryAssignCreateView.as_view(), name='assign-driver'),
+
 ]

@@ -9,36 +9,23 @@ from django.core.files.storage import default_storage
 from django.db import IntegrityError
 from django.http import HttpResponse
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from Auth.models import WareHouse
+from Auth.models import WareHouse, Driver
+from Customer.models import Order
+from Delivery.models import DeliveryAddress
 from Warehouse.serializers import (
-    TaxSerializer,
-    UnitSerializer,
-    PackagingTypeSerializer,
-    CategorySerializer,
-    SimpleSubCategorySerializer,
-    SubCategorySerializer,
-    SimpleProductSerializer,
-    ProductSerializer,
-    DetailProductSerializer,
-    FullCategorySerializer,
-    FullSubCategorySerializer,
-    FullProductSerializer,
-    ProductDisableSerializer
+    TaxSerializer, UnitSerializer, PackagingTypeSerializer, CategorySerializer,
+    SimpleSubCategorySerializer, SubCategorySerializer, SimpleProductSerializer,
+    ProductSerializer, DetailProductSerializer, FullCategorySerializer,
+    FullSubCategorySerializer, FullProductSerializer, ProductDisableSerializer,
+    PendingOrderSerializer, AvailableDriverSerializer, DeliveryCreateSerializer
 )
-from Warehouse.models import (
-    Tax,
-    Unit,
-    PackagingType,
-    Category,
-    SubCategory,
-    Product
-)
+from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product
 
 
 class BaseListView(ListAPIView):
@@ -218,6 +205,87 @@ class ProductDisableView(APIView):
         return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+# Delivery
+
+class PendingOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            warehouse = request.user
+        except WareHouse.DoesNotExist:
+            return Response({"message": "Warehouse does not exist for this user."}, status=status.HTTP_400_BAD_REQUEST)
+
+        pending_orders = Order.objects.filter(order_status='pending', items__warehouse=warehouse).distinct()
+
+        if not pending_orders:
+            return Response({"message": "No orders available for this vendor."}, status=status.HTTP_204_NO_CONTENT)
+
+        serializer = PendingOrderSerializer(pending_orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AvailableDriverListView(ListAPIView):
+    serializer_class = AvailableDriverSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        warehouse = self.request.user
+        try:
+            warehouse = warehouse
+        except AttributeError:
+            return Driver.objects.none()
+
+        queryset = Driver.objects.filter(warehouse=warehouse, is_free=True, approved=True, is_active=True)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "No drivers available"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DeliveryAssignCreateView(CreateAPIView):
+    queryset = DeliveryAddress.objects.all()
+    serializer_class = DeliveryCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        order_ids = data.get('orders')
+        driver_id = data.get('driver')
+
+        if not isinstance(order_ids, list) or not order_ids:
+            return Response({"message": "A list of order IDs must be provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        pending_orders = Order.objects.filter(id__in=order_ids, order_status='Pending')
+        if pending_orders.count() != len(order_ids):
+            return Response({"message": "One or more orders are not pending or do not exist"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            driver = Driver.objects.get(id=driver_id, is_free=True, approved=True)
+        except Driver.DoesNotExist:
+            return Response({"message": "Driver is not available or not approved"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update order status to "Processing"
+        pending_orders.update(order_status='Processing')
+
+        # Create the delivery address instance
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            delivery_address = serializer.save()
+            delivery_address.orders.set(pending_orders)
+            driver.is_free = False
+            driver.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 # Bulk
 class CategoryBulkUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -387,8 +455,6 @@ class CategoryBulkUploadView(APIView):
                         status=status.HTTP_200_OK)
 
 
-
-
 class SubCategoryBulkUploadView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -549,6 +615,3 @@ class SubCategoryBulkUploadView(APIView):
         # Return a JSON response with the processed data
         return Response({"message": "Subcategories processed successfully.", "data": response_data},
                         status=status.HTTP_200_OK)
-
-
-

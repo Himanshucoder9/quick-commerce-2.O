@@ -1,4 +1,9 @@
 from rest_framework import serializers
+
+from Auth.models import Driver
+from Customer.models import Order
+from Customer.serializers import ShippingAddressSerializer
+from Delivery.models import DeliveryAddress
 from General.serializers import CountrySerializer
 from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product
 
@@ -128,10 +133,27 @@ class ProductDisableSerializer(BaseSerializer):
         fields = ("id", "is_active", "slug", "sku_no")
 
 
-# Bulk
+# Delivery
+class PendingOrderSerializer(BaseSerializer):
+    shipping_address = ShippingAddressSerializer(read_only=True)
 
-
-class CategoryBulkSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = ['title', 'image']
+        model = Order
+        fields = (
+            "id", "order_number", "payment_method", "order_status", "total_amount", "shipping_address", "created_at")
+
+
+class AvailableDriverSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Driver
+        fields = ['id', 'name', 'phone', 'address', 'vehicle_no', 'is_free', ]
+
+
+class DeliveryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryAddress
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data['status'] = 'PROCESSING'
+        return super().create(validated_data)
