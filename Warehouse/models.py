@@ -189,15 +189,15 @@ class Product(SEO, TimeStamp):
 
         # Rename images based on SKU
         if self.image1:
-            self.image1.name = f"product/images/{self.sku_no}_1.webp"
+            self.image1.name = f"{self.sku_no}_1.webp"
         if self.image2:
-            self.image2.name = f"product/images/{self.sku_no}_2.webp"
+            self.image2.name = f"{self.sku_no}_2.webp"
         if self.image3:
-            self.image3.name = f"product/images/{self.sku_no}_3.webp"
+            self.image3.name = f"{self.sku_no}_3.webp"
         if self.image4:
-            self.image4.name = f"product/images/{self.sku_no}_4.webp"
+            self.image4.name = f"{self.sku_no}_4.webp"
         if self.image5:
-            self.image5.name = f"product/images/{self.sku_no}_5.webp"
+            self.image5.name = f"{self.sku_no}_5.webp"
 
         # Update availability based on stock quantity
         self.is_available = self.stock_quantity > 0

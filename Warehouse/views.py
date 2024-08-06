@@ -161,19 +161,32 @@ class BaseModelViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     http_method_names = ["get", "post", "patch", "delete"]
 
+    def get_queryset(self):
+        """
+        Return the queryset filtered by the authenticated user's warehouse and not deleted.
+        Should be overridden by subclasses to return the correct queryset.
+        """
+        return self.queryset.filter(warehouse=self.request.user, is_deleted=False)
+
     def get_object(self):
+        """
+        Return the object for the current view based on the slug and filtered by the authenticated user's warehouse.
+        """
         slug = self.kwargs.get('slug')
+        queryset = self.get_queryset()
         try:
-            return self.queryset.get(warehouse=self.request.user, slug=slug, is_deleted=False)
+            return queryset.get(slug=slug)
         except self.queryset.model.DoesNotExist:
             raise NotFound(f"{self.queryset.model.__name__} not found.")
 
     def destroy(self, request, *args, **kwargs):
+        """
+        Mark the object as deleted instead of actually removing it from the database.
+        """
         self.object = self.get_object()
         self.object.is_deleted = True
         self.object.save()
         return Response(f"{self.queryset.model.__name__} deleted successfully", status=status.HTTP_204_NO_CONTENT)
-
 
 class SliderViewSet(ModelViewSet):
     queryset = Slider.objects.all()
@@ -189,9 +202,10 @@ class SliderViewSet(ModelViewSet):
 
 
 class CategoryViewSet(BaseModelViewSet):
-    queryset = Category.objects.all()
     serializer_class = FullCategorySerializer
     lookup_field = "slug"
+
+    
 
 
 class SubCategoryViewSet(BaseModelViewSet):

@@ -571,11 +571,7 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 
-# For custom authentication using phone
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'Auth.backends.PhoneBackend',
-]
+
 
 # Set session engine
 # SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Use database-backed sessions
