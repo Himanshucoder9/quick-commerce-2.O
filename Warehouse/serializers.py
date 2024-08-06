@@ -64,11 +64,10 @@ class FullPackagingTypeSerializer(PackagingTypeSerializer):
 
 # Category Serializers
 class CategorySerializer(BaseSerializer):
-    warehouse = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta(BaseSerializer.Meta):
         model = Category
-        fields = ("id", "warehouse", "title", "image", "slug")
+        fields = ("id",  "title", "image", "slug")
 
 
 class FullCategorySerializer(CategorySerializer):
@@ -80,7 +79,7 @@ class FullCategorySerializer(CategorySerializer):
 class SimpleSubCategorySerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = SubCategory
-        fields = ("id", "warehouse", "category", "title", "image", "slug")
+        fields = ("id", "category", "title", "image", "slug")
 
 
 class SubCategorySerializer(BaseSerializer):
@@ -88,7 +87,7 @@ class SubCategorySerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = SubCategory
-        fields = ("id", "warehouse", "category", "title", "image", "slug")
+        fields = ("id", "category", "title", "image", "slug")
 
 
 class FullSubCategorySerializer(SubCategorySerializer):

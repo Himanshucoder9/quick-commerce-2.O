@@ -46,7 +46,6 @@ class PackagingType(TimeStamp):
 
 
 class Category(TimeStamp):
-    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"))
     title = models.CharField(verbose_name=_("category title"), max_length=50, unique=True)
     image = ProcessedImageField(
         upload_to=image_with_path(path="category/image"),
@@ -65,7 +64,6 @@ class Category(TimeStamp):
 
 
 class SubCategory(TimeStamp):
-    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"))
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name=_("category"))
     title = models.CharField(verbose_name="subcategory title", max_length=50, unique=True)
     image = ProcessedImageField(
