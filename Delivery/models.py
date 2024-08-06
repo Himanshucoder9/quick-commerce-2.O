@@ -21,7 +21,7 @@ class Delivery(TimeStamp):
     otp_created_at = models.DateTimeField(blank=True, null=True, verbose_name=_("OTP created"))
 
     def __str__(self):
-        return f"Delivery to {self.delivery_address} - Status: {self.status}"
+        return f"Delivery to {self.orders.order_number} - Status: {self.status}"
 
     class Meta:
         verbose_name = "Delivery"

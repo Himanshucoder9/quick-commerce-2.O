@@ -94,6 +94,16 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
 
+class DetailOrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(read_only=True, many=True)
+    shipping_address = DetailShippingAddressSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ["id", "order_number", "shipping_address", "payment_method", "total_amount", "order_status",
+                  "created_at", "items", ]
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
