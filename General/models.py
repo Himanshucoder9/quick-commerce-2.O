@@ -7,7 +7,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Country(TimeStamp):
-    objects = None
     name = models.CharField(max_length=100, verbose_name=_("country"),unique=True)
     code = models.CharField(max_length=10, verbose_name=_("country code"),unique=True)
 
@@ -94,8 +93,7 @@ class SocialMedia(TimeStamp):
         ("playstore", "Playstore"),
         ("appstore", "Appstore"),
     )
-
-    site_config = models.ForeignKey(SiteConfig, on_delete=models.CASCADE, related_name="social_media")
+    
     name = models.CharField(max_length=20, choices=SOCIAL_CHOICES, unique=True, verbose_name=_("platform"))
     url = models.URLField(verbose_name=_("URL"))
 

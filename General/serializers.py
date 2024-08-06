@@ -64,7 +64,7 @@ class FullSiteConfigSerializer(SiteConfigSerializer):
 class SocialMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialMedia
-        fields = ("id", "site_config", "name", "url",)
+        fields = ("id", "name", "url",)
 
 
 class FullSocialMediaSerializer(SocialMediaSerializer):
