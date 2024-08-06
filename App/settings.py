@@ -44,6 +44,7 @@ LOCAL_APPS = [
     'Auth',
     'General',
     'Master',
+    'Customer',
     'Warehouse',
     # 'Product',
     # 'Vendor',

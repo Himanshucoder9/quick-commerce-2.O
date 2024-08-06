@@ -458,6 +458,9 @@ class SubCategoryBulkUploadView(APIView):
             return Response({"error": "Authenticated user does not have an associated warehouse."},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # Prepare to bulk create or update subcategories
+        subcategories_to_create = []
+        subcategories_to_update = []
         response_data = []
 
         for item in data:
@@ -477,26 +480,30 @@ class SubCategoryBulkUploadView(APIView):
                 return Response({"error": f"Failed to download image from {item['image_url']}: {str(e)}"},
                                 status=status.HTTP_400_BAD_REQUEST)
 
+            # Prepare subcategory data
+            subcategory_data = {
+                'title': item['title'],
+                'warehouse': warehouse,
+                'image': image_file_name,
+                'slug': slug,
+                'is_deleted': False,
+                'category': None  # Placeholder for category, will set below
+            }
+
             # Check if the category exists
             try:
                 category = Category.objects.get(id=item['category_id'], warehouse=warehouse)
+                subcategory_data['category'] = category  # Set the category for creation
 
                 # Check if the subcategory already exists
                 try:
                     subcategory = SubCategory.objects.get(title=item['title'], warehouse=warehouse, category=category)
 
-                    # If it exists, update the subcategory
-                    if subcategory.image:
-                        old_image_path = subcategory.image.path
-                        if os.path.exists(old_image_path):
-                            os.remove(old_image_path)  # Delete the old image file
-
+                    # If the subcategory exists, prepare it for update
                     subcategory.image = image_file_name
                     subcategory.slug = slug
                     subcategory.is_deleted = False  # Reset is_deleted to False
-                    subcategory.save()  # Save the updated subcategory
-
-                    # Add to response data
+                    subcategory.save()
                     response_data.append({
                         'id': subcategory.id,
                         'warehouse': subcategory.warehouse.id,
@@ -509,28 +516,8 @@ class SubCategoryBulkUploadView(APIView):
                     })
 
                 except SubCategory.DoesNotExist:
-                    # If it doesn't exist, create a new subcategory
-                    subcategory_data = SubCategory(
-                        title=item['title'],
-                        warehouse=warehouse,
-                        image=image_file_name,
-                        slug=slug,
-                        is_deleted=False,
-                        category=category
-                    )
-                    subcategory_data.save()  # Save the new subcategory
-
-                    # Add to response data
-                    response_data.append({
-                        'id': subcategory_data.id,
-                        'warehouse': subcategory_data.warehouse.id,
-                        'category': subcategory_data.category.id,
-                        'title': subcategory_data.title,
-                        'image': subcategory_data.image.url,
-                        'slug': subcategory_data.slug,
-                        'created_at': subcategory_data.created_at,
-                        'updated_at': subcategory_data.updated_at
-                    })
+                    # If it doesn't exist, prepare it for creation
+                    subcategories_to_create.append(subcategory_data)
 
             except Category.DoesNotExist:
                 return Response(
@@ -538,10 +525,30 @@ class SubCategoryBulkUploadView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+        # Perform bulk create for new subcategories
+        if subcategories_to_create:
+            try:
+                created_subcategories = SubCategory.objects.bulk_create(
+                    [SubCategory(**data) for data in subcategories_to_create]
+                )
+                for subcategory in created_subcategories:
+                    response_data.append({
+                        'id': subcategory.id,
+                        'warehouse': subcategory.warehouse.id,
+                        'category': subcategory.category.id,
+                        'title': subcategory.title,
+                        'image': subcategory.image.url,
+                        'slug': subcategory.slug,
+                        'created_at': subcategory.created_at,
+                        'updated_at': subcategory.updated_at
+                    })
+            except Exception as e:
+                return Response({"error": f"Error during bulk creation: {str(e)}"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
         # Return a JSON response with the processed data
         return Response({"message": "Subcategories processed successfully.", "data": response_data},
                         status=status.HTTP_200_OK)
-
 
 
 

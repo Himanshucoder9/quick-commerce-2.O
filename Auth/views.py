@@ -139,7 +139,7 @@ class LoginView(APIView):
 
 class UserProfileView(RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
-    http_method_names = ['get', 'patch',]
+    http_method_names = ['get', 'patch', ]
 
     def get_object(self):
         user = self.request.user
@@ -249,7 +249,8 @@ class PasswordResetVerifyView(APIView):
         new_password = request.data.get('new_password')
 
         if not phone or not otp or not new_password:
-            return Response({'error': 'Phone number, OTP, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Phone number, OTP, and new password are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(phone=phone)
@@ -263,6 +264,7 @@ class PasswordResetVerifyView(APIView):
         user.save()
 
         return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+
 
 class ProfileDeleteRequestView(APIView):
     def post(self, request):
@@ -283,8 +285,9 @@ class ProfileDeleteRequestView(APIView):
             defaults={'otp': otp, 'created_at': timezone.now()}
         )
 
-        return Response({'message': 'OTP sent to your phone number for delete profile.', 'OTP': otp}, status=status.HTTP_200_OK)
-    
+        return Response({'message': 'OTP sent to your phone number for delete profile.', 'OTP': otp},
+                        status=status.HTTP_200_OK)
+
 
 class ProfileDeleteVerifyView(APIView):
     permission_classes = (IsAuthenticated,)

@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from Auth.serializers import CustomerProfileSerializer
 from Customer.models import ShippingAddress, Favorite, CartItem, Cart, OrderItem, Order, Payment
 from Warehouse.serializers import SimpleProductSerializer, ProductSerializer
