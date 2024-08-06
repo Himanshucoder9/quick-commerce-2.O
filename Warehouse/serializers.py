@@ -1,8 +1,6 @@
 from rest_framework import serializers
-
 from Auth.models import Driver, WareHouse
 from Customer.models import Order
-from Customer.serializers import ShippingAddressSerializer
 from Delivery.models import DeliveryAddress
 from General.serializers import CountrySerializer
 from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
@@ -148,7 +146,7 @@ class ProductDisableSerializer(BaseSerializer):
 
 # Delivery
 class PendingOrderSerializer(BaseSerializer):
-    shipping_address = ShippingAddressSerializer(read_only=True)
+    shipping_address = "Customer.serializers.ShippingAddressSerializer"
 
     class Meta:
         model = Order

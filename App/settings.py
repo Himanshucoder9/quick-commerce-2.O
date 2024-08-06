@@ -46,9 +46,9 @@ LOCAL_APPS = [
     'Master',
     'Customer',
     'Warehouse',
+    'Delivery',
     # 'Product',
     # 'Vendor',
-    # 'Delivery',
     # 'Notification',
 ]
 
