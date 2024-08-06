@@ -64,6 +64,8 @@ class FullPackagingTypeSerializer(PackagingTypeSerializer):
 
 # Category Serializers
 class CategorySerializer(BaseSerializer):
+    warehouse = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta(BaseSerializer.Meta):
         model = Category
         fields = ("id", "warehouse", "title", "image", "slug")

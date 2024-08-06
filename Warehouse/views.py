@@ -156,37 +156,24 @@ class ProductDetailView(RetrieveAPIView):
 
 # Admin ViewSets
 class BaseModelViewSet(ModelViewSet):
-    """Base viewset to handle common functionality."""
-
     permission_classes = (IsAuthenticated,)
     http_method_names = ["get", "post", "patch", "delete"]
 
-    def get_queryset(self):
-        """
-        Return the queryset filtered by the authenticated user's warehouse and not deleted.
-        Should be overridden by subclasses to return the correct queryset.
-        """
-        return self.queryset.filter(warehouse=self.request.user, is_deleted=False)
-
-    def get_object(self):
-        """
-        Return the object for the current view based on the slug and filtered by the authenticated user's warehouse.
-        """
-        slug = self.kwargs.get('slug')
-        queryset = self.get_queryset()
-        try:
-            return queryset.get(slug=slug)
-        except self.queryset.model.DoesNotExist:
-            raise NotFound(f"{self.queryset.model.__name__} not found.")
-
     def destroy(self, request, *args, **kwargs):
-        """
-        Mark the object as deleted instead of actually removing it from the database.
-        """
         self.object = self.get_object()
         self.object.is_deleted = True
         self.object.save()
-        return Response(f"{self.queryset.model.__name__} deleted successfully", status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": f"{self.queryset.model.__name__} deleted successfully."},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(warehouse=self.request.user.warehouse)  # Save with warehouse
+
+    def perform_update(self, serializer):
+        serializer.save(warehouse=self.request.user.warehouse)
+
 
 class SliderViewSet(ModelViewSet):
     queryset = Slider.objects.all()
@@ -202,16 +189,21 @@ class SliderViewSet(ModelViewSet):
 
 
 class CategoryViewSet(BaseModelViewSet):
+    queryset = Category.objects.all()
     serializer_class = FullCategorySerializer
     lookup_field = "slug"
 
-    
+    def get_queryset(self):
+        return self.queryset.filter(is_deleted=False)
 
 
 class SubCategoryViewSet(BaseModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = FullSubCategorySerializer
     lookup_field = "slug"
+
+    def get_queryset(self):
+        return self.queryset.filter(is_deleted=False)
 
 
 class ProductViewSet(BaseModelViewSet):
