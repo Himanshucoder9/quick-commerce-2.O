@@ -65,7 +65,7 @@ class Category(TimeStamp):
 
 class SubCategory(TimeStamp):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name=_("category"))
-    title = models.CharField(verbose_name="subcategory title", max_length=50, unique=True)
+    title = models.CharField(verbose_name="subcategory title", max_length=50)
     image = ProcessedImageField(
         upload_to=image_with_path(path="subcategory/image"),
         format="WEBP",
@@ -125,28 +125,28 @@ class Product(SEO, TimeStamp):
 
     # Attribute fields
     attribute_key1 = models.CharField(verbose_name=_("attribute key 1"), max_length=100, blank=True, null=True)
-    attribute_value1 = CKEditor5Field(verbose_name=_("attribute value 1"), config_name="extends", max_length=100,
+    attribute_value1 = CKEditor5Field(verbose_name=_("attribute value 1"), config_name="extends",
                                       blank=True, null=True)
     attribute_key2 = models.CharField(verbose_name=_("attribute key 2"), max_length=100, blank=True, null=True)
-    attribute_value2 = CKEditor5Field(verbose_name=_("attribute value 2"), config_name="extends", max_length=100,
+    attribute_value2 = CKEditor5Field(verbose_name=_("attribute value 2"), config_name="extends",
                                       blank=True, null=True)
     attribute_key3 = models.CharField(verbose_name=_("attribute key 3"), max_length=100, blank=True, null=True)
-    attribute_value3 = CKEditor5Field(verbose_name=_("attribute value 3"), config_name="extends", max_length=100,
+    attribute_value3 = CKEditor5Field(verbose_name=_("attribute value 3"), config_name="extends",
                                       blank=True, null=True)
     attribute_key4 = models.CharField(verbose_name=_("attribute key 4"), max_length=100, blank=True, null=True)
-    attribute_value4 = CKEditor5Field(verbose_name=_("attribute value 4"), config_name="extends", max_length=100,
+    attribute_value4 = CKEditor5Field(verbose_name=_("attribute value 4"), config_name="extends",
                                       blank=True, null=True)
     attribute_key5 = models.CharField(verbose_name=_("attribute key 5"), max_length=100, blank=True, null=True)
-    attribute_value5 = CKEditor5Field(verbose_name=_("attribute value 5"), config_name="extends", max_length=100,
+    attribute_value5 = CKEditor5Field(verbose_name=_("attribute value 5"), config_name="extends",
                                       blank=True, null=True)
     attribute_key6 = models.CharField(verbose_name=_("attribute key 6"), max_length=100, blank=True, null=True)
-    attribute_value6 = CKEditor5Field(verbose_name=_("attribute value 6"), config_name="extends", max_length=100,
+    attribute_value6 = CKEditor5Field(verbose_name=_("attribute value 6"), config_name="extends",
                                       blank=True, null=True)
     attribute_key7 = models.CharField(verbose_name=_("attribute key 7"), max_length=100, blank=True, null=True)
-    attribute_value7 = CKEditor5Field(verbose_name=_("attribute value 7"), config_name="extends", max_length=100,
+    attribute_value7 = CKEditor5Field(verbose_name=_("attribute value 7"), config_name="extends",
                                       blank=True, null=True)
     attribute_key8 = models.CharField(verbose_name=_("attribute key 8"), max_length=100, blank=True, null=True)
-    attribute_value8 = CKEditor5Field(verbose_name=_("attribute value 8"), config_name="extends", max_length=100,
+    attribute_value8 = CKEditor5Field(verbose_name=_("attribute value 8"), config_name="extends",
                                       blank=True, null=True)
 
     # Other fields
@@ -154,7 +154,7 @@ class Product(SEO, TimeStamp):
                                        verbose_name=_("country of origin"))
     packaging_type = models.ForeignKey(PackagingType, max_length=50, on_delete=models.CASCADE)
     description = CKEditor5Field(verbose_name=_("description"), help_text=_("Enter Detailed Description of Product"),
-                                 config_name="extends")
+                                 config_name="extends",null=True, blank=True,)
     cgst = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("CGST"),
                              related_name="cgst_tax")
     sgst = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("SGST"),
@@ -162,6 +162,7 @@ class Product(SEO, TimeStamp):
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name=_("price"))
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_("discount %"))
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name=_("stock quantity"))
+    stock_unit = models.ForeignKey(Unit, on_delete=models.CASCADE, verbose_name=_("stock unit"),related_name="products")
     reorder_level = models.IntegerField(verbose_name=_("reorder level"), default=0)
     is_available = models.BooleanField(default=True, verbose_name=_("product available"))
     is_active = models.BooleanField(default=True, verbose_name=_("product active"))
@@ -176,14 +177,25 @@ class Product(SEO, TimeStamp):
         return f"{self.title} - {self.price} Rs."
 
     def save(self, *args, **kwargs):
+
+        if not self.sku_no:
+            last_product = Product.objects.order_by("-id").first()
+            if last_product:
+                last_product_number = int(last_product.sku_no)
+                new_sku_number = f"SKU{str(last_product_number + 1).zfill(9)}"
+                self.sku_no = new_sku_number
+            else:
+                self.sku_no = "SKU000000001"
+
         # Generate SKU number if it doesn't exist
         if not self.sku_no:
             last_product = Product.objects.order_by('id').last()
-            if last_product:
-                last_id = int(last_product.sku_no.split('-')[-1]) if last_product.sku_no else 0
-                self.sku_no = f"SKU{last_id + 1:09d}"  # Format SKU as "SKU-00000001", "SKU-00000002", etc.
-            else:
-                self.sku_no = "SKU000000001"  # Starting SKU
+        if last_product and last_product.sku_no:
+            # Extract the numeric part of the last SKU
+            last_id = int(last_product.sku_no[3:]) if last_product.sku_no.startswith('SKU') else 0
+            self.sku_no = f"SKU{last_id + 1:09d}"  # Format SKU as "SKU000000001", "SKU000000002", etc.
+        else:
+            self.sku_no = "SKU000000001"  # Starting SKU
 
         # Rename images based on SKU
         if self.image1:
@@ -234,5 +246,5 @@ class Slider(TimeStamp):
         options={'quality': 20}, verbose_name="banner image"
     )
     text = models.CharField(verbose_name='banner text', max_length=200, null=True, blank=True)
-    position = models.CharField(max_length=8, choices=POSITION_CHOICES, verbose_name='position', default=CENTER)
+    position = models.CharField(max_length=8, choices=POSITION_CHOICES, verbose_name='position', default=CENTER,blank=True, null=True)
     url = models.URLField(verbose_name=_("url"), blank=True, null=True)

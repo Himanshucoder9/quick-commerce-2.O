@@ -3,14 +3,19 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -85,14 +90,22 @@ WSGI_APPLICATION = 'App.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': config('ENGINE'),
-        'NAME': config('NAME'),
-        'USER': 'qc',
-        'PASSWORD': config('PASSWORD'),
-        'HOST': config('HOST'),
-        'PORT': config('PORT'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': config('ENGINE'),
+#         'NAME': config('NAME'),
+#         'USER': 'root',
+#         'PASSWORD': config('PASSWORD'),
+#         'HOST': config('HOST'),
+#         'PORT': config('PORT'),
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -126,12 +139,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-# Static
 STATIC_URL = '/static/'
-STATIC_ROOT = '/home/x7nvgmfv66ip/public_html/portal.quickecommerce.m4bistro.in/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR / "static"),
+]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/home/x7nvgmfv66ip/public_html/demo.m4bistro.in/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR / "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -190,15 +205,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:9000",
     "http://localhost:3000",
     "http://localhost:5500",
-    "http://localhost:5173",
     "https://www.m4bistro.in",
 ]
 
 # Jazzmin
 JAZZMIN_SETTINGS = {
-    "site_title": "Quick Commerce 2.O Admin",
-    "site_header": "Quick Commerce 2.O Admin",
-    "site_brand": "Quick Commerce 2.O Admin",
+    "site_title": "Quick Commerce Admin",
+    "site_header": "Quick Commerce Admin",
+    "site_brand": "Quick Commerce Admin",
     "site_logo": "assets/img/q1.png",
 
     "login_logo": "assets/img/q1.png",
@@ -209,10 +223,10 @@ JAZZMIN_SETTINGS = {
     # "site_icon": "frontend/assets/img/favicon.png",
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to Quick Commerce 2.O",
+    "welcome_sign": "Welcome to Quick Commerce",
 
     # Copyright on the footer
-    "copyright": "Quick Commerce 2.O",
+    "copyright": "Quick Commerce",
 
     # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
     "user_avatar": None,
@@ -246,13 +260,13 @@ JAZZMIN_SETTINGS = {
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
     "order_with_respect_to": ["Auth", "Core",
-                              "Auth.User", "Auth.CustomAdmin", "Auth.Customer", "Auth.WareHouse", "Auth.Agent",
-                              "General.SiteConfig", "General.SocialMedia", "General.About", "General.PrivacyPolicy",
-                              "General.TermsAndCondition", "General.FAQCategory", "General.FAQ", "General.Contact", "General.Feedback",
-                              "General.Country", "Warehouse.Tax",
-                              "Warehouse.Unit", "Warehouse.Category", "Warehouse.SubCategory", "Warehouse.PackagingType",
-                              "Warehouse.Product", "Customer.ShippingAddress", "Customer.Cart", "Customer.CartItem",
-                              "Customer.Order", "Customer.OrderItem", "Customer.Payment"
+                              "Auth.User", "Auth.CustomAdmin", "Auth.Customer", "Auth.VendorShop", "Auth.Agent",
+                              "Core.SiteConfig", "Core.SocialMedia", "Core.Banner", "Core.About", "Core.PrivacyPolicy",
+                              "Core.TermsAndCondition", "Core.FAQCategory", "Core.FAQ", "Core.Contact", "Core.Feedback",
+                              "Product.Country","Product.Tax",
+                              "Product.Unit", "Product.Category", "Product.SubCategory", "Product.PackagingType",
+                              "Product.Product", "Product.ShippingAddress", "Product.Cart", "Product.CartItem",
+                              "Product.Order", "Product.OrderItem", "Product.Payment"
                               ],
 
     # Custom links to append to app groups, keyed on app name
@@ -273,49 +287,45 @@ JAZZMIN_SETTINGS = {
         # Auth
         "Auth.User": "fas fa-users-cog",
         "Auth.CustomAdmin": "fas fa-user-shield",
-        "Auth.WareHouse": "fas fa-users",
+        "Auth.VendorShop": "fas fa-users",
         "Auth.Agent": "fas fa-user-shield",
         "Auth.Customer": "fas fa-user-friends",
         "Auth.Driver": "fas fa-user-tie",
 
         # Core
-        "General.SiteConfig": "fas fa-globe",
-        "General.SocialMedia": "fas fa-hashtag",
-        "General.About": "far fa-address-card",
-        "General.PrivacyPolicy": "fas fa-user-lock",
-        "General.TermsAndCondition": "fas fa-check",
-        "General.FAQCategory": "fas fa-layer-group",
-        "General.FAQ": "fas fa-question",
-        "General.Contact": "fas fa-comments",
-        "General.Feedback": "fas fa-star",
-        "General.Country": "fas fa-globe-africa",
-        "General.State": "fas fa-globe-africa",
-        "General.City": "fas fa-globe-africa",
+        "Core.SiteConfig": "fas fa-globe",
+        "Core.SocialMedia": "fas fa-hashtag",
+        "Core.About": "far fa-address-card",
+        "Core.Banner": "fas fa-images",
+        "Core.PrivacyPolicy": "fas fa-user-lock",
+        "Core.TermsAndCondition": "fas fa-check",
+        "Core.FAQCategory": "fas fa-layer-group",
+        "Core.FAQ": "fas fa-question",
+        "Core.Contact": "fas fa-comments",
+        "Core.Feedback": "fas fa-star",
 
         #Delivery
         "Delivery.DeliveryAddress": "fas fa-biking",
 
         # Product
+        "Product.Country": "fas fa-globe-africa",
+        "Product.Tax": "fas fa-file-invoice-dollar",
+        "Product.Unit": "fas fa-balance-scale-right",
+        "Product.Category": "fas fa-shapes",
+        "Product.SubCategory": "fas fa-layer-group",
+        "Product.PackagingType": "fas fa-box-open",
+        "Product.Product": "fas fa-people-carry",
+        "Product.ShippingAddress": "fas fa-map-marker-alt",
+        "Product.Cart": "fas fa-shopping-cart",
+        "Product.CartItem": "fas fa-cart-plus",
+        "Product.Order": "fas fa-shipping-fast",
+        "Product.OrderItem": "fas fa-truck",
+        "Product.Payment": "fas fa-rupee-sign",
 
-        "Warehouse.Tax": "fas fa-file-invoice-dollar",
-        "Warehouse.Unit": "fas fa-balance-scale-right",
-        "Warehouse.Category": "fas fa-shapes",
-        "Warehouse.SubCategory": "fas fa-layer-group",
-        "Warehouse.PackagingType": "fas fa-box-open",
-        "Warehouse.Product": "fas fa-people-carry",
-        # Customer
-        "Customer.ShippingAddress": "fas fa-map-marker-alt",
-        "Customer.Cart": "fas fa-shopping-cart",
-        "Customer.CartItem": "fas fa-cart-plus",
-        "Customer.Order": "fas fa-shipping-fast",
-        "Customer.OrderItem": "fas fa-truck",
-        "Customer.Payment": "fas fa-rupee-sign",
-        "Customer.Favorite": "fas fa-heart",
-
-        # # Vendor
-        # "Vendor.BusinessCategory": "fas fa-briefcase",
-        # "Vendor.CategoryRequest": "fas fa-list",
-        # "Vendor.Support": "fas fa-headset",
+        # Vendor
+        "Vendor.BusinessCategory": "fas fa-briefcase",
+        "Vendor.CategoryRequest": "fas fa-list",
+        "Vendor.Support": "fas fa-headset",
 
         # Site
         "sites.site": "fas fa-globe",
@@ -550,11 +560,23 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
+
 # SPECTACULAR
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Quick Commerce 2.O API',
-    'DESCRIPTION': 'Quick Commerce 2.O API documentation',
-    'VERSION': '2.0.0.0 Beta',
+    'TITLE': 'Quick Commerce API',
+    'DESCRIPTION': 'Quick Commerce API documentation',
+    'VERSION': '1.0.0.0 Beta',
     'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
+
+
+
+# Set session engine
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Use database-backed sessions
+# SESSION_COOKIE_AGE = 3600  # 5 minutes in seconds
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# SESSION_SAVE_EVERY_REQUEST = True
+# SESSION_COOKIE_SECURE = False  # Set to True only if using HTTPS
+# SESSION_COOKIE_HTTPONLY = True

@@ -26,7 +26,6 @@ class TaxAdmin(admin.ModelAdmin):
     )
 
 
-
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ('name', 'abbreviation', 'created_at', 'updated_at')
@@ -68,7 +67,7 @@ class PackagingTypeAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = ('title', '_image', 'is_deleted', 'created_at')
-    list_filter = ('title',  'is_deleted', 'created_at', 'updated_at')
+    list_filter = ('title', 'is_deleted', 'created_at', 'updated_at')
     search_fields = ('title',)
     readonly_fields = ('created_at', 'updated_at')
     list_per_page = 15
@@ -93,7 +92,7 @@ class CategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
 @admin.register(SubCategory)
 class SubCategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
-    list_display = ('title', 'category', '_image', 'is_deleted', 'created_at')
+    list_display = ('title', 'category', '_image', 'created_at', 'is_deleted',)
     list_filter = ('title', 'category', 'is_deleted')
     search_fields = ('title', 'category__title')
     readonly_fields = ('created_at', 'updated_at')
@@ -104,7 +103,7 @@ class SubCategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             'fields': ('category', 'title', 'image', 'is_deleted'),
         }),
         (_('Timestamp'), {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at', 'updated_at','slug'),
         }),
     )
 
@@ -132,8 +131,8 @@ class ProductAdmin(admin.ModelAdmin):
         (_('Product Info'), {
             'fields': (
                 'sku_no', 'warehouse', 'title', 'size_unit', 'size', 'category', 'subcategory',
-                'country_origin', 'packaging_type', 'description', 'price', 'discount',
-                'stock_quantity', 'reorder_level', 'is_available', 'is_active', 'is_deleted'
+                'country_origin', 'packaging_type', 'description', 'price', 'discount','cgst','sgst',
+                'stock_quantity','stock_unit', 'reorder_level', 'is_available', 'is_active', 'is_deleted'
             )
         }),
         (_('Images'), {

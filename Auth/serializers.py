@@ -61,6 +61,14 @@ class WareHouseProfileSerializer(serializers.ModelSerializer):
         )
 
 
+class WareHouseDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WareHouse
+        fields = (
+            "id", "warehouse_no", "warehouse_name", "gst_no", "fssai_no", "warehouse_image",
+        )
+
+
 class DriverRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Driver

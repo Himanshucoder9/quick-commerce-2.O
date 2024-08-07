@@ -109,7 +109,18 @@ class SimpleAllProductListView(ListAPIView):
 
     def get_queryset(self):
         warehouse_id = self.kwargs.get('warehouse_id')
-        return Product.objects.filter(warehouse_id=warehouse_id, is_deleted=False)
+        queryset = Product.objects.filter(warehouse_id=warehouse_id, is_deleted=False)
+
+        warehouse_id = self.kwargs.get('warehouse_id')
+        warehouse = WareHouse.objects.filter(id=warehouse_id)
+
+        if not warehouse.exists():
+            raise NotFound("No warehouse found.")
+
+        if not queryset.exists():
+            raise NotFound("Product not found.")
+
+        return queryset
 
 
 class AllProductListView(ListAPIView):
@@ -209,7 +220,7 @@ class ProductDisableView(APIView):
         except Product.DoesNotExist:
             return None
 
-    def put(self, request, slug, sku_no):
+    def patch(self, request, slug, sku_no):
         product = self.get_product(slug, sku_no, request.user)
         if product:
             product.is_active = False

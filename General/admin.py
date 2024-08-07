@@ -23,6 +23,7 @@ class CountryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at',)
     list_per_page = 15
 
+
 @admin.register(State)
 class StateAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
@@ -36,8 +37,8 @@ class StateAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
 
-    list_display = ['name', 'code', 'is_available','created_at']
-    list_filter = ('is_available','created_at', 'updated_at',)
+    list_display = ['name', 'code', 'is_available', 'created_at']
+    list_filter = ('is_available', 'created_at', 'updated_at',)
     search_fields = ('name', 'code',)
     readonly_fields = ('created_at', 'updated_at',)
     list_per_page = 15
@@ -56,8 +57,8 @@ class CityAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         }),
     )
 
-    list_display = ['name', 'state', 'is_available','created_at']
-    list_filter = ('is_available','created_at', 'updated_at',)
+    list_display = ['name', 'state', 'is_available', 'created_at']
+    list_filter = ('is_available', 'created_at', 'updated_at',)
     search_fields = ('name', 'code',)
     readonly_fields = ('created_at', 'updated_at',)
     list_per_page = 15
@@ -172,7 +173,7 @@ class PrivacyPolicyAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
 
 @admin.register(TermsAndCondition)
-class TermsAndConditionAdmin(ImportExportModelAdmin,admin.ModelAdmin):
+class TermsAndConditionAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
         ('Terms & Condition Info', {
             'fields': ('title', 'description',), }),
@@ -219,7 +220,7 @@ class FAQAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     _answer.short_description = 'Answer'
 
-    list_display = ['id','category', 'question', '_answer', 'created_at', 'updated_at', ]
+    list_display = ['id', 'category', 'question', '_answer', 'created_at', 'updated_at', ]
     list_filter = ('category', 'question', 'created_at', 'updated_at',)
     search_fields = ('question', 'category')
     readonly_fields = ('created_at', 'updated_at',)
@@ -247,7 +248,6 @@ class FAQCategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     search_fields = ('title',)
     readonly_fields = ('created_at', 'updated_at',)
     list_per_page = 10
-
 
 
 @admin.register(Contact)

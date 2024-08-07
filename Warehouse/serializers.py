@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from Auth.models import Driver, WareHouse
+from Auth.serializers import WareHouseDetailSerializer
 from Customer.models import Order
 from Delivery.models import DeliveryAddress
 from General.serializers import CountrySerializer
@@ -130,6 +131,7 @@ class DetailProductSerializer(BaseSerializer):
     packaging_type = PackagingTypeSerializer(read_only=True)
     cgst = TaxSerializer(read_only=True)
     sgst = TaxSerializer(read_only=True)
+    warehouse = WareHouseDetailSerializer(read_only=True)
 
     class Meta(BaseSerializer.Meta):
         model = Product

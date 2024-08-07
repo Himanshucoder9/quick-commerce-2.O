@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from django.urls import reverse
 
+
 # Register your models here.
 
 
@@ -12,7 +13,8 @@ class ShippingAddressAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
         ('Info', {
             'fields': (
-                'customer', 'customer_name', 'customer_phone', 'address_type', 'building_name', 'floor', 'landmark', 'latitude',
+                'customer', 'customer_name', 'customer_phone', 'address_type', 'building_name', 'floor', 'landmark',
+                'latitude',
                 'longitude', 'full_address'),
         }),
 
@@ -23,7 +25,7 @@ class ShippingAddressAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     )
 
-    list_display = [ 'customer', 'customer_name', 'customer_phone', 'address_type', 'building_name', 'floor', 'landmark']
+    list_display = ['customer', 'customer_name', 'customer_phone', 'address_type', 'building_name', 'floor', 'landmark']
     list_filter = ('customer_name', 'address_type',)
     search_fields = ('customer_name',)
     readonly_fields = ('created_at', 'updated_at',)
@@ -78,7 +80,7 @@ class CartItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 
     )
 
-    list_display = [ 'cart', 'product', 'quantity', ]
+    list_display = ['cart', 'product', 'quantity', ]
     readonly_fields = ('cart', 'product', 'quantity',)
     list_filter = ('product__title',)
     list_per_page = 10
@@ -91,7 +93,8 @@ class CartItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 class OrderAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
         ('Info', {
-            'fields': ('customer', 'order_number', 'shipping_address', 'total_amount', 'payment_method', 'order_status', 'created_at'),
+            'fields': ('customer', 'order_number', 'shipping_address', 'total_amount', 'payment_method', 'order_status',
+                       'created_at'),
         }),
     )
 
@@ -108,7 +111,8 @@ class OrderAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    list_display = ['order_number', 'customer', 'total_amount', 'order_status', 'payment_method', '_shipping_address', 'created_at']
+    list_display = ['order_number', 'customer', 'total_amount', 'order_status', 'payment_method', '_shipping_address',
+                    'created_at']
     list_filter = ('customer__name', 'total_amount', 'shipping_address')
     search_fields = ('customer__name',)
     readonly_fields = ('created_at', 'order_number')
