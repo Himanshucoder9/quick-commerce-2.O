@@ -177,40 +177,43 @@ class Product(SEO, TimeStamp):
         return f"{self.title} - {self.price} Rs."
 
     def save(self, *args, **kwargs):
+        is_new = not self.pk
 
         if not self.sku_no:
             last_product = Product.objects.order_by("-id").first()
             if last_product:
-                last_product_number = int(last_product.sku_no)
+                last_product_number = int(last_product.sku_no.replace("SKU", ""))
                 new_sku_number = f"SKU{str(last_product_number + 1).zfill(9)}"
                 self.sku_no = new_sku_number
             else:
                 self.sku_no = "SKU000000001"
 
-        # Generate SKU number if it doesn't exist
+        # Only generate SKU number if it doesn't exist
         if not self.sku_no:
-            last_product = Product.objects.order_by('id').last()
-        if last_product and last_product.sku_no:
-            # Extract the numeric part of the last SKU
-            last_id = int(last_product.sku_no[3:]) if last_product.sku_no.startswith('SKU') else 0
-            self.sku_no = f"SKU{last_id + 1:09d}"  # Format SKU as "SKU000000001", "SKU000000002", etc.
-        else:
-            self.sku_no = "SKU000000001"  # Starting SKU
+            last_product = Product.objects.order_by("id").last()
+            if last_product and last_product.sku_no:
+                # Extract the numeric part of the last SKU
+                last_id = int(last_product.sku_no[3:]) if last_product.sku_no.startswith("SKU") else 0
+                self.sku_no = f"SKU{last_id + 1:09d}"  # Format SKU as "SKU000000001", "SKU000000002", etc.
+            else:
+                self.sku_no = "SKU000000001"  # Starting SKU
 
-        # Rename images based on SKU
-        if self.image1:
+        # Rename images based on SKU only if the images are newly uploaded or changed
+        if is_new or self.image1 and self.image1 != self.__class__.objects.get(pk=self.pk).image1:
             self.image1.name = f"{self.sku_no}_1.webp"
-        if self.image2:
+        if is_new or self.image2 and self.image2 != self.__class__.objects.get(pk=self.pk).image2:
             self.image2.name = f"{self.sku_no}_2.webp"
-        if self.image3:
+        if is_new or self.image3 and self.image3 != self.__class__.objects.get(pk=self.pk).image3:
             self.image3.name = f"{self.sku_no}_3.webp"
-        if self.image4:
+        if is_new or self.image4 and self.image4 != self.__class__.objects.get(pk=self.pk).image4:
             self.image4.name = f"{self.sku_no}_4.webp"
-        if self.image5:
+        if is_new or self.image5 and self.image5 != self.__class__.objects.get(pk=self.pk).image5:
             self.image5.name = f"{self.sku_no}_5.webp"
 
         # Update availability based on stock quantity
         self.is_available = self.stock_quantity > 0
+
+        # Update is_active based on presence of any image
         self.is_active = self.is_active if any(
             [self.image1, self.image2, self.image3, self.image4, self.image5]) else False
 
