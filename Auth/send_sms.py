@@ -146,43 +146,43 @@ def send_otp_email_vendor(user, otp):
     )
 
 
-def send_password_reset_sms(user):
-    # Initialize Twilio client
-    client = twilio_client
+# def send_password_reset_sms(user):
+#     # Initialize Twilio client
+#     client = twilio_client
 
-    token = new_token()
-    exp_time = timezone.now() + datetime.timedelta(minutes=30)
-    PasswordResetToken.objects.update_or_create(
-        user=user, defaults={"user": user, "token": token, "validity": exp_time}
-    )
+#     token = new_token()
+#     exp_time = timezone.now() + datetime.timedelta(minutes=30)
+#     PasswordResetToken.objects.update_or_create(
+#         user=user, defaults={"user": user, "token": token, "validity": exp_time}
+#     )
 
-    # Compose SMS message
-    sms_body = render_to_string(
-        "auth/password_reset.txt",
-        {
-            "token": token,
-            "phone": user.phone,
-            "user": user.name,
-            "base_url": TEMPLATES_BASE_URL,
-        },
-    )
+#     # Compose SMS message
+#     sms_body = render_to_string(
+#         "auth/password_reset.txt",
+#         {
+#             "token": token,
+#             "phone": user.phone,
+#             "user": user.name,
+#             "base_url": TEMPLATES_BASE_URL,
+#         },
+#     )
 
-    # Send SMS via Twilio
-    try:
-        message = client.messages.create(
-            body=sms_body, from_=settings.TWILIO_PHONE_NUMBER, to=user.phone
-        )
-        # print("SMS Sent successfully:", message.sid)
-        return Response(
-            {"message": "Reset password SMS sent successfully"},
-            status=status.HTTP_200_OK,
-        )
-    except Exception as e:
-        # print("Error sending SMS:", str(e))
-        return Response(
-            {"message": "Failed to send reset password SMS"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+#     # Send SMS via Twilio
+#     try:
+#         message = client.messages.create(
+#             body=sms_body, from_=settings.TWILIO_PHONE_NUMBER, to=user.phone
+#         )
+#         # print("SMS Sent successfully:", message.sid)
+#         return Response(
+#             {"message": "Reset password SMS sent successfully"},
+#             status=status.HTTP_200_OK,
+#         )
+#     except Exception as e:
+#         # print("Error sending SMS:", str(e))
+#         return Response(
+#             {"message": "Failed to send reset password SMS"},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#         )
 
 
 def send_product_restock_email_notification(user, product):

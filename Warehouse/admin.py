@@ -117,7 +117,7 @@ class SubCategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'title', 'sku_no', 'price', 'stock_quantity', 'is_available', 'is_active', 'is_deleted'
+        'title', 'sku_no', '_image','price', 'stock_quantity', 'is_available', 'is_active', 'is_deleted'
     )
     list_filter = (
         'category', 'subcategory', 'country_origin', 'packaging_type', 'is_available', 'is_active', 'is_deleted'
@@ -126,6 +126,14 @@ class ProductAdmin(admin.ModelAdmin):
     ordering = ('title',)
     readonly_fields = ('sku_no', 'created_at', 'updated_at')  # sku_no and slug are read-only
     list_per_page = 15
+
+    def _image(self, obj):
+        if obj.image1:
+            return format_html('<img src="{}" style="max-width:100px; max-height:100px"/>'.format(obj.image1.url))
+        else:
+            return _("No Image")
+
+    _image.short_description = _("Image")
 
     fieldsets = (
         (_('Product Info'), {
