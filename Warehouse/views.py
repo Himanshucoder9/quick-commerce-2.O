@@ -230,6 +230,25 @@ class ProductDisableView(APIView):
         return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+class ProductActiveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_product(self, slug, sku_no, user):
+        try:
+            return Product.objects.get(slug=slug, sku_no=sku_no, warehouse=user)
+        except Product.DoesNotExist:
+            return None
+
+    def patch(self, request, slug, sku_no):
+        product = self.get_product(slug, sku_no, request.user)
+        if product:
+            product.is_active = True
+            product.save()
+            serializer = ProductDisableSerializer(product)
+            return Response({"message": "Product active successfully.", "product": serializer.data})
+        return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
 # Delivery
 
 class PendingOrdersView(APIView):

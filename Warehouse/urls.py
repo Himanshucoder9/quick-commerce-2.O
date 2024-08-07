@@ -14,7 +14,7 @@ from Warehouse.views import (
     ProductViewSet,
     ProductDisableView, PendingOrdersView, AvailableDriverListView,
     DeliveryAssignCreateView, AllWareHouseListView, WarehouseDashboardAPIView, SliderViewSet,
-    SliderListView,
+    SliderListView, ProductActiveView,
 )
 
 # Router configuration for viewsets
@@ -56,6 +56,7 @@ urlpatterns = [
          ProductViewSet.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}),
          name='product-detail'),
     path('product/disable/<str:slug>/proid/<str:sku_no>/', ProductDisableView.as_view(), name='product-disable'),
+    path('product/active/<str:slug>/proid/<str:sku_no>/', ProductActiveView.as_view(), name='product-active'),
     # path('categories/bulk-upload/', CategoryBulkUploadView.as_view(), name='category-bulk-upload'),
     # path('subcategories/bulk-upload/', SubCategoryBulkUploadView.as_view(), name='subcategory-bulk-upload'),
 

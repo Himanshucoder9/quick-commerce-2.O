@@ -39,6 +39,7 @@ class ShippingAddressRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     queryset = ShippingAddress.objects.all()
     serializer_class = FullShippingAddressSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'patch', 'delete']
 
     def get_queryset(self):
         return ShippingAddress.objects.filter(customer=self.request.user)
@@ -182,6 +183,7 @@ class OrderListCreateAPIView(APIView):
 
 class OrderRetrieveUpdateDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    http_method_names = ['get', ]
 
     def get_order(self, order_id, customer):
         return get_object_or_404(Order, id=order_id, customer=customer)
