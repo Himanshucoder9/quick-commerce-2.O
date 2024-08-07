@@ -17,7 +17,7 @@ class BaseSerializer(serializers.ModelSerializer):
 class AllWarehouseSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = WareHouse
-        fields = ("id", "warehouse_no", "warehouse_name", "approved", "is_active", "latitude", "longitude", "city")
+        fields = ("id", "warehouse_no", "warehouse_name", "city", "approved", "is_active", "latitude", "longitude", "city")
 
 
 # Slider

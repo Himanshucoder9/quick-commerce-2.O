@@ -154,7 +154,7 @@ class Product(SEO, TimeStamp):
                                        verbose_name=_("country of origin"))
     packaging_type = models.ForeignKey(PackagingType, max_length=50, on_delete=models.CASCADE)
     description = CKEditor5Field(verbose_name=_("description"), help_text=_("Enter Detailed Description of Product"),
-                                 config_name="extends",null=True, blank=True,)
+                                 config_name="extends", null=True, blank=True, )
     cgst = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("CGST"),
                              related_name="cgst_tax")
     sgst = models.ForeignKey(Tax, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("SGST"),
@@ -162,7 +162,8 @@ class Product(SEO, TimeStamp):
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name=_("price"))
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_("discount %"))
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name=_("stock quantity"))
-    stock_unit = models.ForeignKey(Unit, on_delete=models.CASCADE, verbose_name=_("stock unit"),related_name="products")
+    stock_unit = models.ForeignKey(Unit, on_delete=models.CASCADE, verbose_name=_("stock unit"),
+                                   related_name="products")
     reorder_level = models.IntegerField(verbose_name=_("reorder level"), default=0)
     is_available = models.BooleanField(default=True, verbose_name=_("product available"))
     is_active = models.BooleanField(default=True, verbose_name=_("product active"))
@@ -249,5 +250,13 @@ class Slider(TimeStamp):
         options={'quality': 20}, verbose_name="banner image"
     )
     text = models.CharField(verbose_name='banner text', max_length=200, null=True, blank=True)
-    position = models.CharField(max_length=8, choices=POSITION_CHOICES, verbose_name='position', default=CENTER,blank=True, null=True)
+    position = models.CharField(max_length=8, choices=POSITION_CHOICES, verbose_name='position', default=CENTER,
+                                blank=True, null=True)
     url = models.URLField(verbose_name=_("url"), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _("Slider")
+        verbose_name_plural = _("Sliders")
+
+    def __str__(self):
+        return f"{self.text} - {self.device}"

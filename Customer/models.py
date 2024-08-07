@@ -25,7 +25,7 @@ class ShippingAddress(TimeStamp):
     address_type = models.CharField(
         max_length=10,
         choices=ADDRESS_CHOICES,
-        default="home",
+        default="Home",
         verbose_name=_("address type"),
     )
     building_name = models.CharField(max_length=255, verbose_name=_("Flat/House No./Building Name"))

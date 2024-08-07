@@ -10,6 +10,7 @@ from General.views import (
     TermsAndConditionView,
     ContactCreateView,
     FeedbackCreateView,
+    FAQCategoryListView,
     FAQListView,
 )
 
@@ -24,5 +25,6 @@ urlpatterns = [
     path('terms-and-conditions/', TermsAndConditionView.as_view(), name='terms-and-conditions'),
     path('contact/', ContactCreateView.as_view(), name='contact-create'),
     path('feedback/', FeedbackCreateView.as_view(), name='feedback-create'),
+    path('faq-categories/', FAQCategoryListView.as_view(), name='faq-categories-list'),
     path('faqs/', FAQListView.as_view(), name='faq-list'),
 ]

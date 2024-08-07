@@ -12,6 +12,7 @@ from General.models import (
     About,
     PrivacyPolicy,
     TermsAndCondition,
+    FAQCategory,
     FAQ,
     Contact,
     Feedback,
@@ -25,6 +26,7 @@ from General.serializers import (
     AboutSerializer,
     PrivacyPolicySerializer,
     TermsAndConditionSerializer,
+    FAQCategorySerializer,
     FAQSerializer,
     ContactSerializer,
     FeedbackSerializer,
@@ -33,12 +35,14 @@ from General.serializers import (
 
 class BaseListView(ListAPIView):
     """Base class for list views with available filter."""
+
     def get_queryset(self):
         """Override to filter available objects."""
-        return self.queryset.filter(is_available=True) if hasattr(self.queryset.model, 'is_available') else self.queryset
+        return self.queryset.filter(is_available=True) if hasattr(self.queryset.model,
+                                                                  'is_available') else self.queryset
 
 
-class CountryListView(BaseListView):
+class CountryListView(ListAPIView):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
 
@@ -65,6 +69,7 @@ class CityListView(BaseListView):
 
 class BaseRetrieveView(RetrieveAPIView):
     """Base class for retrieving the latest object."""
+
     def get_object(self):
         """Get the latest object of the model."""
         try:
@@ -78,9 +83,17 @@ class SiteConfigView(BaseRetrieveView):
     serializer_class = SiteConfigSerializer
 
 
-class SocialMediaList(BaseListView):
+class SocialMediaList(ListAPIView):
     queryset = SocialMedia.objects.all()
     serializer_class = SocialMediaSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response({"message": "No data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class AboutView(BaseRetrieveView):
@@ -98,9 +111,30 @@ class TermsAndConditionView(BaseRetrieveView):
     serializer_class = TermsAndConditionSerializer
 
 
+class FAQCategoryListView(ListAPIView):
+    queryset = FAQCategory.objects.all()
+    serializer_class = FAQCategorySerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response({"message": "No data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
 class FAQListView(ListAPIView):
     queryset = FAQ.objects.all()
     serializer_class = FAQSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response({"message": "No data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class ContactCreateView(CreateAPIView):

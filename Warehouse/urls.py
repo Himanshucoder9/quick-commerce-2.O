@@ -12,9 +12,9 @@ from Warehouse.views import (
     AllProductListView,
     ProductDetailView,
     ProductViewSet,
-    ProductDisableView, PendingOrdersView, AvailableDriverListView,
+    ProductDisableView, ProductActiveView, PendingOrdersView, AvailableDriverListView,
     DeliveryAssignCreateView, AllWareHouseListView, WarehouseDashboardAPIView, SliderViewSet,
-    SliderListView, ProductActiveView,
+    SliderListView,
 )
 
 # Router configuration for viewsets

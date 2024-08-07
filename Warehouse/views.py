@@ -33,7 +33,12 @@ class AllWareHouseListView(ListAPIView):
     serializer_class = AllWarehouseSerializer
 
     def get_queryset(self):
-        return WareHouse.objects.filter(approved=True, is_active=True)
+        city = self.request.query_params.get('city', None)
+        queryset = WareHouse.objects.filter(approved=True, is_active=True)
+
+        if city:
+            queryset = queryset.filter(city__name__iexact=city)
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -47,15 +52,39 @@ class TaxListView(ListAPIView):
     queryset = Tax.objects.all()
     serializer_class = TaxSerializer
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response({"message": "No data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class UnitListView(ListAPIView):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response({"message": "No data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class PackagingTypeListView(ListAPIView):
     queryset = PackagingType.objects.all()
     serializer_class = PackagingTypeSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response({"message": "No data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class SliderListView(ListAPIView):
@@ -63,7 +92,18 @@ class SliderListView(ListAPIView):
 
     def get_queryset(self):
         warehouse_id = self.kwargs.get('warehouse_id')
-        return Slider.objects.filter(warehouse=warehouse_id)
+        queryset = Slider.objects.filter(warehouse_id=warehouse_id)
+
+        warehouse_id = self.kwargs.get('warehouse_id')
+        warehouse = WareHouse.objects.filter(id=warehouse_id)
+
+        if not warehouse.exists():
+            raise NotFound("No warehouse found.")
+
+        if not queryset.exists():
+            raise NotFound("Product not found.")
+
+        return queryset
 
 
 class SimpleCategoryListView(ListAPIView):
@@ -144,6 +184,7 @@ class AllProductListView(ListAPIView):
 
 class ProductDetailView(RetrieveAPIView):
     serializer_class = DetailProductSerializer
+    lookup_field = 'slug'
 
     def get_queryset(self):
         slug = self.kwargs.get('slug')

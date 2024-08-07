@@ -13,6 +13,7 @@ from Customer.models import ShippingAddress, Favorite, Cart, CartItem, Order, Or
 from Customer.serializers import ShippingAddressSerializer, FullShippingAddressSerializer, FullFavoriteSerializer, \
     CartSerializer, CartItemSerializer, OrderSerializer
 from Warehouse.models import Product
+from rest_framework.exceptions import NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,13 @@ class ShippingAddressListCreateAPIView(ListCreateAPIView):
     serializer_class = ShippingAddressSerializer
 
     def get_queryset(self):
-        return ShippingAddress.objects.filter(customer=self.request.user)
+        try:
+            customer = self.request.user.customer
+        except AttributeError:
+            raise NotFound("Authenticated user is not a customer.")
+
+        queryset = ShippingAddress.objects.filter(customer=customer)
+        return queryset
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -32,7 +39,7 @@ class ShippingAddressListCreateAPIView(ListCreateAPIView):
         return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
-        serializer.save(customer=self.request.user)
+        serializer.save(customer=self.request.user.customer)
 
 
 class ShippingAddressRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
@@ -42,11 +49,17 @@ class ShippingAddressRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     http_method_names = ['get', 'patch', 'delete']
 
     def get_queryset(self):
-        return ShippingAddress.objects.filter(customer=self.request.user)
+        try:
+            customer = self.request.user.customer
+        except AttributeError:
+            raise NotFound("Authenticated user is not a customer.")
+
+        queryset = ShippingAddress.objects.filter(customer=customer)
+        return queryset
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Address updated successfully", "data": serializer.data})
@@ -183,7 +196,7 @@ class OrderListCreateAPIView(APIView):
 
 class OrderRetrieveUpdateDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', ]
+    http_method_names = ['get']
 
     def get_order(self, order_id, customer):
         return get_object_or_404(Order, id=order_id, customer=customer)
