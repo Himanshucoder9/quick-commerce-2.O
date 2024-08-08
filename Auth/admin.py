@@ -9,7 +9,35 @@ from Auth.send_sms import send_approve_warehouse_sms
 admin.site.unregister(Group)
 
 
-# Base User Admin
+class ReadOnlyAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class NoAddDeleteAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class NoAddAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+
+class NoChangeAdmin(admin.ModelAdmin):
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 class BaseUserAdmin:
     fieldsets = (
         ("User Info", {
@@ -37,7 +65,7 @@ class BaseUserAdmin:
 
 
 @admin.register(User)
-class CustomUserAdmin(BaseUserAdmin, UserAdmin):
+class CustomUserAdmin(ReadOnlyAdmin,BaseUserAdmin, UserAdmin):
     model = User
     list_display = ("id", "name", "_profile", "phone", "email", "gender", "role", "is_active",)
 
