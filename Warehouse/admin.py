@@ -125,6 +125,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('title', 'sku_no')
     ordering = ('title',)
     readonly_fields = ('sku_no', 'created_at', 'updated_at')  # sku_no and slug are read-only
+    actions = ('active_products', 'disable_products')
     list_per_page = 15
 
     def _image(self, obj):
@@ -166,3 +167,18 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at'),
         }),
     )
+
+    def active_products(self, request, queryset):
+        queryset.update(is_active=True)
+        for product in queryset:
+            product.save()
+        self.message_user(request, "Selected products have been change to active.")
+
+    def disable_products(self, request, queryset):
+        queryset.update(is_active=False)
+        for product in queryset:
+            product.save()
+        self.message_user(request, "Selected products have been change to in-active.")
+
+    active_products.short_description = "Active selected products"
+    disable_products.short_description = "In-active selected products"
