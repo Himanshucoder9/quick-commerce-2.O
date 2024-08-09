@@ -10,13 +10,30 @@ from Auth.models import Driver
 from Auth.otp_generator import generate_otp
 from Customer.models import Order
 from Delivery.models import DeliveryAddress
-from Delivery.serializers import DetailDeliverySerializer, DeliverySerializer, DeliveryStatusSerializer, \
+from Delivery.serializers import DriverLocationSerializer, DetailDeliverySerializer, DeliverySerializer, DeliveryStatusSerializer, \
     CustomerDeliveryStatusSerializer
 import logging
 
 # Create your views here.
 
 logger = logging.getLogger(__name__)
+
+
+class UpdateDriverLocationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Assuming the driver is authenticated
+            driver = Driver.objects.get(id=request.user.driver.id)
+
+            serializer = DriverLocationSerializer(driver, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "Location updated successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Driver.DoesNotExist:
+            return Response({"error": "Driver not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class PendingDeliveriesListView(ListAPIView):

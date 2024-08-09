@@ -24,7 +24,7 @@ from Warehouse.serializers import (
     ProductSerializer, DetailProductSerializer,
     FullProductSerializer, ProductDisableSerializer,
     PendingOrderSerializer, AvailableDriverSerializer, DeliveryCreateSerializer, AllWarehouseSerializer,
-    SliderSerializer, CreateUpdateProductSerializer
+    SliderSerializer
 )
 from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
 
@@ -130,6 +130,23 @@ class CategoryListView(ListAPIView):
         return response
 
 
+class CategoryRetrieveView(RetrieveAPIView):
+    serializer_class = CategorySerializer
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        return Category.objects.filter(is_deleted=False)
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        category = response.data
+        category['subcategories'] = SimpleSubCategorySerializer(
+            SubCategory.objects.filter(category_id=category['id']),
+            many=True, context={'request': request}
+        ).data
+        return response
+
+
 class SimpleSubCategoryListView(ListAPIView):
     serializer_class = SimpleSubCategorySerializer
 
@@ -198,25 +215,6 @@ class ProductDetailView(RetrieveAPIView):
 
 
 # Admin ViewSets
-class BaseModelViewSet(ModelViewSet):
-    permission_classes = (IsAuthenticated,)
-    http_method_names = ["get", "post", "patch", "delete"]
-
-    def destroy(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.is_deleted = True
-        self.object.save()
-        return Response(
-            {"detail": f"{self.queryset.model.__name__} deleted successfully."},
-            status=status.HTTP_204_NO_CONTENT
-        )
-
-    def perform_create(self, serializer):
-        serializer.save(warehouse=self.request.user.warehouse)  # Save with warehouse
-
-    def perform_update(self, serializer):
-        serializer.save(warehouse=self.request.user.warehouse)
-
 
 class SliderViewSet(ModelViewSet):
     queryset = Slider.objects.all()
@@ -224,9 +222,16 @@ class SliderViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     http_method_names = ["get", "post", "patch", "delete"]
 
+    def get_queryset(self):
+        queryset = Slider.objects.filter(warehouse=self.request.user.warehouse)
+        if not queryset.exists():
+            raise NotFound("Slider not found.")
+        return queryset
+
     def get_object(self):
+        pk = self.kwargs.get('pk')
         try:
-            return self.queryset.get(warehouse=self.request.user.warehouse)
+            return self.queryset.get(warehouse=self.request.user.warehouse, pk=pk)
         except self.queryset.model.DoesNotExist:
             raise NotFound(f"Slider not found.")
 
@@ -248,12 +253,23 @@ class ProductViewSet(ModelViewSet):
         slug = self.kwargs.get('slug')
         sku_no = self.kwargs.get('sku_no')
         try:
-            return Product.objects.get(warehouse=self.request.user, slug=slug, sku_no=sku_no, is_deleted=False)
+            return Product.objects.get(warehouse=self.request.user.warehouse, slug=slug, sku_no=sku_no,
+                                       is_deleted=False)
         except Product.DoesNotExist:
             raise NotFound("Product not found.")
 
-    def perform_create(self):
-        CreateUpdateProductSerializer.save(warehouse=self.request.user.warehouse)
+    def perform_create(self, serializer):
+        serializer.save(warehouse=self.request.user.warehouse)
+
+    def perform_update(self, serializer):
+        serializer.save(warehouse=self.request.user.warehouse)
+
+    def update(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        serializer = self.get_serializer(self.object, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"message": "Product updated successfully.", "data": serializer.data})
 
     def destroy(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -261,18 +277,8 @@ class ProductViewSet(ModelViewSet):
         self.object.save()
         return Response(
             {"detail": f"{self.queryset.model.__name__} deleted successfully."},
-            status=status.HTTP_204_NO_CONTENT
+            status=status.HTTP_200_OK
         )
-
-    def perform_update(self, serializer):
-        CreateUpdateProductSerializer.save(warehouse=self.request.user.warehouse)
-
-    def update(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        serializer = CreateUpdateProductSerializer(self.object, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response({"message": "Product updated successfully.", "data": serializer.data})
 
 
 class ProductDisableView(APIView):
@@ -320,7 +326,7 @@ class PendingOrdersView(APIView):
 
     def get(self, request):
         try:
-            warehouse = request.user
+            warehouse = request.user.warehouse
         except WareHouse.DoesNotExist:
             return Response({"message": "Warehouse does not exist for this user."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -400,7 +406,7 @@ class WarehouseDashboardAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            warehouse = request.user.warehouse_user
+            warehouse = request.user.warehouse
 
             # Fetch all products and order items for the warehouse
             products = Product.objects.filter(warehouse=warehouse)

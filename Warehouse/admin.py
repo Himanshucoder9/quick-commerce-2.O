@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from .models import (
-    Tax, Unit, PackagingType, Category, SubCategory, Product
+    Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
 )
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
@@ -103,7 +103,7 @@ class SubCategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             'fields': ('category', 'title', 'image', 'is_deleted'),
         }),
         (_('Timestamp'), {
-            'fields': ('created_at', 'updated_at','slug'),
+            'fields': ('created_at', 'updated_at', 'slug'),
         }),
     )
 
@@ -117,31 +117,24 @@ class SubCategoryAdmin(ImportExportModelAdmin, admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'title', 'sku_no', '_image','price', 'stock_quantity', 'is_available', 'is_active', 'is_deleted'
+        'id', 'title', 'sku_no', 'category', '_image', 'price', 'stock_quantity', 'is_available', 'is_active',
+        'is_deleted'
     )
     list_filter = (
         'category', 'subcategory', 'country_origin', 'packaging_type', 'is_available', 'is_active', 'is_deleted'
     )
     search_fields = ('title', 'sku_no')
     ordering = ('title',)
-    readonly_fields = ('sku_no', 'created_at', 'updated_at')  # sku_no and slug are read-only
+    readonly_fields = ('sku_no', 'created_at', 'updated_at')
     actions = ('active_products', 'disable_products')
     list_per_page = 15
-
-    def _image(self, obj):
-        if obj.image1:
-            return format_html('<img src="{}" style="max-width:100px; max-height:100px"/>'.format(obj.image1.url))
-        else:
-            return _("No Image")
-
-    _image.short_description = _("Image")
 
     fieldsets = (
         (_('Product Info'), {
             'fields': (
                 'sku_no', 'warehouse', 'title', 'size_unit', 'size', 'category', 'subcategory',
-                'country_origin', 'packaging_type', 'description', 'price', 'discount','cgst','sgst',
-                'stock_quantity','stock_unit', 'reorder_level', 'is_available', 'is_active', 'is_deleted'
+                'country_origin', 'packaging_type', 'description', 'price', 'discount', 'cgst', 'sgst', 'exp_date',
+                'stock_quantity', 'stock_unit', 'reorder_level', 'is_available', 'is_active', 'is_deleted'
             )
         }),
         (_('Images'), {
@@ -168,6 +161,12 @@ class ProductAdmin(admin.ModelAdmin):
         }),
     )
 
+    def _image(self, obj):
+        if obj.image1:
+            return format_html('<img src="{}" style="max-width:100px; max-height:100px"/>'.format(obj.image1.url))
+        else:
+            return _("No Image")
+
     def active_products(self, request, queryset):
         queryset.update(is_active=True)
         for product in queryset:
@@ -182,3 +181,28 @@ class ProductAdmin(admin.ModelAdmin):
 
     active_products.short_description = "Active selected products"
     disable_products.short_description = "In-active selected products"
+
+
+@admin.register(Slider)
+class SliderAdmin(admin.ModelAdmin):
+    list_display = ('warehouse', '_image', 'created_at', 'updated_at')
+    search_fields = ('warehouse',)
+    ordering = ('warehouse',)
+    list_filter = ('warehouse', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 15
+
+    fieldsets = (
+        (_('Tax Info'), {
+            'fields': ('warehouse', 'image', 'text', 'url')
+        }),
+        (_('Timestamps'), {
+            'fields': ('created_at', 'updated_at'),
+        }),
+    )
+
+    def _image(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-width:100px; max-height:100px"/>'.format(obj.image.url))
+        else:
+            return _("No Image")

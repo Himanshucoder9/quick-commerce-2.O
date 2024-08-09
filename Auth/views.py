@@ -167,7 +167,6 @@ class CustomerProfileView(UserProfileView):
     serializer_class = CustomerProfileSerializer
 
 
-
 class WarehouseRegisterView(UserRegisterView):
     @extend_schema(
         request=WareHouseRegisterSerializer,
@@ -188,7 +187,6 @@ class WarehouseRegisterView(UserRegisterView):
 class WarehouseProfileView(UserProfileView):
     queryset = WareHouse.objects.all()
     serializer_class = WareHouseProfileSerializer
-
 
     def get_object(self):
         user = self.request.user
@@ -217,7 +215,6 @@ class DriverRegisterView(UserRegisterView):
 class DriverProfileView(UserProfileView):
     queryset = Driver.objects.all()
     serializer_class = DriverProfileSerializer
-
 
     def get_object(self):
         user = self.request.user

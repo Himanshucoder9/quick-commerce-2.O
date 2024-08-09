@@ -38,6 +38,7 @@ class NoChangeAdmin(admin.ModelAdmin):
         return False
 
 
+# Base User Admin
 class BaseUserAdmin:
     fieldsets = (
         ("User Info", {
@@ -65,7 +66,7 @@ class BaseUserAdmin:
 
 
 @admin.register(User)
-class CustomUserAdmin(ReadOnlyAdmin,BaseUserAdmin, UserAdmin):
+class CustomUserAdmin(BaseUserAdmin, UserAdmin):
     model = User
     list_display = ("id", "name", "_profile", "phone", "email", "gender", "role", "is_active",)
 
@@ -87,20 +88,24 @@ class CustomUserAdmin(ReadOnlyAdmin,BaseUserAdmin, UserAdmin):
 @admin.register(CustomAdmin)
 class CustomAdminAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     list_display = ("name", "email", "phone", "gender", "_profile", "is_active")
-
+    readonly_fields = ("role",)
     add_fieldsets = (
         (None, {
-            "fields": ("role", "name", "email", "phone", "gender", "dob", "profile", "password1", "password2",)
+            "fields": ("name", "email", "phone", "gender", "dob", "profile", "password1", "password2",)
         }),
     )
 
     def save_model(self, request, obj, form, change):
-        obj.role = "SU"
+        if not change:
+            obj.role = 'SU'
+            obj.is_superuser = True
+            obj.is_staff = True
+            obj.is_active = True
         super().save_model(request, obj, form, change)
 
 
 @admin.register(Customer)
-class CustomerAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
+class CustomerAdmin(ReadOnlyAdmin, BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     list_display = ("name", "email", "phone", "gender", "_profile", "is_active",)
 
     add_fieldsets = (
@@ -127,7 +132,7 @@ class WareHouseAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
             "fields": ("building_name", "street_name", "zip", "city", "state", "full_address", "latitude", "longitude"),
         }),
         ("Permissions", {
-            "fields": ("is_superuser", "is_staff", "is_active", "approved"),
+            "fields": ("is_active", "approved"),
         }),
         ("Login Info", {
             "fields": ("last_login", "date_joined", "groups", "user_permissions"),
@@ -158,12 +163,12 @@ class WareHouseAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
                     "_warehouse_image_owner", "approved")
 
     search_fields = ("name", "warehouse_name", "identity", "fssai_no", "warehouse_no", "operation_area")
-    readonly_fields = ("warehouse_no",)
+    readonly_fields = ("warehouse_no", "role", "last_login", "date_joined")
     list_filter = ("approved",)
 
     add_fieldsets = (
         ("Personal Info", {
-            "fields": ("role", "name", "email", "phone", "dob", "gender", "profile", "password1", "password2",)
+            "fields": ("name", "email", "phone", "dob", "gender", "profile", "password1", "password2",)
         }),
         ("WareHouse Info", {
             "fields": ("warehouse_no", "warehouse_name", "license", "gst_no", "fssai_no", "operation_area",
@@ -182,6 +187,13 @@ class WareHouseAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     ordering = ("phone",)
     list_per_page = 15
 
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.role = 'WH'
+            obj.is_active = True
+            obj.approved = True
+        super().save_model(request, obj, form, change)
+
 
 @admin.register(Driver)
 class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
@@ -190,13 +202,13 @@ class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
             "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile",),
         }),
         ("Driver Info", {
-            "fields": ("license", "license_front", "license_back", "vehicle_no", "is_free"),
+            "fields": ("license", "license_front", "license_back", "vehicle_no", "latitude", "longitude", "is_free"),
         }),
         ("Identity Details", {
             "fields": ("aadhar_no", "pan_no", "aadhar_document", "pan_document", "address"),
         }),
         ("Permissions", {
-            "fields": ("is_superuser", "is_staff", "is_active", "approved"),
+            "fields": ("is_active", "approved"),
         }),
         ("Login Info", {
             "fields": ("last_login", "date_joined", "groups", "user_permissions"),
@@ -228,10 +240,11 @@ class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     list_display = ("name", "email", "phone", "gender", "_profile", "is_active", "is_free")
     list_filter = ("name", "email", "gender", "phone", "role", "is_active")
     search_fields = ("name", "email", "phone", "role", "gender")
+    readonly_fields = ("role", "last_login", "date_joined")
 
     add_fieldsets = (
         ("Personal Info", {
-            "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", "password1",
+            "fields": ("warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", "password1",
                        "password2",)
         }),
         ("Driver Info", {
@@ -241,8 +254,15 @@ class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
             "fields": ("aadhar_no", "pan_no", "aadhar_document", "pan_document", "address"),
         }),
         ("Permissions", {
-            "fields": ("is_superuser", "is_staff", "is_active", "approved"),
+            "fields": ("is_active", "approved"),
         }),
     )
     ordering = ("phone",)
     list_per_page = 15
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.role = 'DR'
+            obj.is_active = True
+            obj.approved = True
+        super().save_model(request, obj, form, change)

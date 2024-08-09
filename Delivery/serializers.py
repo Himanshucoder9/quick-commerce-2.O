@@ -6,6 +6,12 @@ from Auth.models import Driver
 
 
 # Delivery Serializers
+class DriverLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Driver
+        fields = ['latitude', 'longitude']
+
+
 class DeliverySerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress

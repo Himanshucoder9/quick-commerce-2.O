@@ -96,14 +96,14 @@ class WareHouse(User, Address):
     fssai_no = models.CharField(max_length=15, verbose_name=_("FSSAI number"), blank=True, null=True)
     operation_area = models.CharField(max_length=200, verbose_name=_("area of operation"))
     warehouse_image = ProcessedImageField(
-        upload_to="auth/warehouse/",
+        upload_to="auth/warehouse/images",
         format="WEBP",
         options={"quality": 70},
         verbose_name=_("shop image"),
         help_text=_("Upload warehouse image.")
     )
     warehouse_image_owner = ProcessedImageField(
-        upload_to="auth/warehouse/owner/",
+        upload_to="auth/warehouse/owner",
         format="WEBP",
         options={"quality": 70},
         verbose_name=_("shop image with owner"),
@@ -122,12 +122,6 @@ class WareHouse(User, Address):
                 self.warehouse_no = f"{warehouse_no_prefix}{new_suffix}"
             else:
                 self.warehouse_no = "WH0001"
-
-        if self.warehouse_image:
-            self.warehouse_image.name = f"auth/warehouse/{self.warehouse_no}.webp"
-        if self.warehouse_image_owner:
-            self.warehouse_image_owner.name = f"auth/warehouse/owner/{self.warehouse_no}.webp"
-
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -174,6 +168,8 @@ class Driver(User):
     vehicle_no = models.CharField(max_length=10, verbose_name=_("vehicle number"))
     approved = models.BooleanField(default=False, verbose_name=_("Approved"))
     is_free = models.BooleanField(default=True, verbose_name=_("Is Free"))
+    latitude = models.DecimalField(verbose_name=_("latitude"), max_digits=12, decimal_places=7, )
+    longitude = models.DecimalField(verbose_name=_("longitude"), max_digits=12, decimal_places=7, )
 
     def __str__(self):
         return f"Driver - {self.name}"
@@ -181,6 +177,7 @@ class Driver(User):
     class Meta:
         verbose_name = _("Driver")
         verbose_name_plural = _("Drivers")
+
 
 
 class OTP(models.Model):

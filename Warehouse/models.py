@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from imagekit.models import ProcessedImageField
 from autoslug import AutoSlugField
 from django_ckeditor_5.fields import CKEditor5Field
-from Auth.models import WareHouse
+from Auth.models import WareHouse, User
 from Master.image_uploader import image_with_path
 from Master.models import TimeStamp, SEO
 from General.models import Country
@@ -179,6 +179,11 @@ class Product(SEO, TimeStamp):
     def __str__(self):
         return f"{self.title} - {self.price} Rs."
 
+    def clean(self):
+        super().clean()
+        # Set is_available based on stock_quantity
+        self.is_available = self.stock_quantity > 0
+
     def save(self, *args, **kwargs):
         is_new = not self.pk
 
@@ -213,9 +218,6 @@ class Product(SEO, TimeStamp):
         if is_new or self.image5 and self.image5 != self.__class__.objects.get(pk=self.pk).image5:
             self.image5.name = f"{self.sku_no}_5.webp"
 
-        # Update availability based on stock quantity
-        self.is_available = self.stock_quantity > 0
-
         # Update is_active based on presence of any image
         self.is_active = self.is_active if any(
             [self.image1, self.image2, self.image3, self.image4, self.image5]) else False
@@ -224,36 +226,14 @@ class Product(SEO, TimeStamp):
 
 
 class Slider(TimeStamp):
-    WEB = 'WEB'
-    TAB = 'TAB'
-    MOBILE = 'MOBILE'
-
-    DEVICE_CHOICES = [
-        (WEB, 'Website'),
-        (TAB, 'Tablet'),
-        (MOBILE, 'Mobile'),
-    ]
-    LEFT = 'L'
-    RIGHT = 'R'
-    CENTER = 'C'
-
-    POSITION_CHOICES = [
-        (LEFT, 'Left'),
-        (RIGHT, 'Right'),
-        (CENTER, 'Center'),
-    ]
-
     warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"),
                                   related_name="sliders")
-    device = models.CharField(max_length=8, choices=DEVICE_CHOICES, verbose_name='device', default=WEB)
     image = ProcessedImageField(
         upload_to='core/banner/',
         format='WEBP',
         options={'quality': 20}, verbose_name="banner image"
     )
     text = models.CharField(verbose_name='banner text', max_length=200, null=True, blank=True)
-    position = models.CharField(max_length=8, choices=POSITION_CHOICES, verbose_name='position', default=CENTER,
-                                blank=True, null=True)
     url = models.URLField(verbose_name=_("url"), blank=True, null=True)
 
     class Meta:
@@ -261,7 +241,7 @@ class Slider(TimeStamp):
         verbose_name_plural = _("Sliders")
 
     def __str__(self):
-        return f"{self.text} - {self.device}"
+        return f"{self.text}"
 
 
 class WareHouseSupportTicket(TimeStamp):

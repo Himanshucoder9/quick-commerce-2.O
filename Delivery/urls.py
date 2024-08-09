@@ -10,10 +10,12 @@ from Delivery.views import (
     DeliveryStatusView,
     DriverAllOrdersAPIView,
     DriverDashboardAPIView,
+    UpdateDriverLocationAPIView,
 )
 
 urlpatterns = [
     # Driver dashboard
+    path('current/location/', UpdateDriverLocationAPIView.as_view(), name='driver-location'),
     path('dashboard/', DriverDashboardAPIView.as_view(), name='driver-dashboard'),
 
     # Pending deliveries

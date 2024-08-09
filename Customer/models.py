@@ -1,12 +1,16 @@
 import uuid
-
 from django.db import models
 from Master.models import TimeStamp
 from Auth.models import User, Customer, WareHouse
 from Master.myvalidator import mobile_validator
 from django.utils.translation import gettext_lazy as _
-
 from Master.token_genrator import generate_token
+from Warehouse.models import Product
+from django.db import models
+from Master.models import TimeStamp
+from Auth.models import User, Customer, WareHouse
+from Master.myvalidator import mobile_validator
+from django.utils.translation import gettext_lazy as _
 from Warehouse.models import Product
 
 

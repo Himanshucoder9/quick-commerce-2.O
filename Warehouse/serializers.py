@@ -7,6 +7,8 @@ from General.serializers import CountrySerializer
 from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
 
 
+# import Customer.serializers as customer_serializers
+
 # Base Serializers
 class BaseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -109,7 +111,7 @@ class SimpleProductSerializer(BaseSerializer):
 
 class ProductSerializer(BaseSerializer):
     category = CategorySerializer(read_only=True)
-    subcategory = SubCategorySerializer(read_only=True)
+    subcategory = SimpleSubCategorySerializer(read_only=True)
     size_unit = UnitSerializer(read_only=True)
     cgst = TaxSerializer(read_only=True)
     sgst = TaxSerializer(read_only=True)
@@ -138,14 +140,11 @@ class DetailProductSerializer(BaseSerializer):
         exclude = ("is_active", "reorder_level",)
 
 
-class FullProductSerializer(ProductSerializer):
-    class Meta(ProductSerializer.Meta):
+class FullProductSerializer(BaseSerializer):
+    class Meta:
+        model = Product
         fields = "__all__"
-
-
-class CreateUpdateProductSerializer(ProductSerializer):
-    class Meta(ProductSerializer.Meta):
-        exclude = ("sku_no",)
+        read_only_fields = ("sku_no",)
 
 
 class ProductDisableSerializer(BaseSerializer):
@@ -155,13 +154,17 @@ class ProductDisableSerializer(BaseSerializer):
 
 # Delivery
 class PendingOrderSerializer(BaseSerializer):
-    shipping_address = serializers.StringRelatedField(source='shipping_address')
+    shipping_address = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = (
             "id", "order_number", "payment_method", "order_status", "total_amount", "shipping_address", "created_at"
         )
+
+    def get_shipping_address(self, obj):
+        from Customer.serializers import ShippingAddressSerializer  # Import here to avoid circular dependency
+        return ShippingAddressSerializer(obj.shipping_address).data
 
 
 class AvailableDriverSerializer(serializers.ModelSerializer):
@@ -171,6 +174,7 @@ class AvailableDriverSerializer(serializers.ModelSerializer):
 
 
 class DeliveryCreateSerializer(serializers.ModelSerializer):
+    # orders = customer_serializers.OrderSerializer(many=True)
     class Meta:
         model = DeliveryAddress
         fields = '__all__'

@@ -226,6 +226,11 @@ class OrderListCreateAPIView(APIView):
 
             for item_data in items:
                 product = get_object_or_404(Product, id=item_data.get('product'))
+
+                if product.stock_quantity < item_data.get('quantity'):
+                    return Response({"error": f"Not enough stock available for product ID {product.id}",
+                                     "available_quantity": product.stock_quantity}, status=status.HTTP_400_BAD_REQUEST)
+
                 OrderItem.objects.create(order=order, warehouse=product.warehouse, product=product,
                                          quantity=item_data.get('quantity'), item_price=item_data.get('item_price'))
 

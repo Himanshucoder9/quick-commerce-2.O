@@ -263,7 +263,7 @@ JAZZMIN_SETTINGS = {
                               "Auth.User", "Auth.CustomAdmin", "Auth.Customer", "Auth.VendorShop", "Auth.Agent",
                               "Core.SiteConfig", "Core.SocialMedia", "Core.Banner", "Core.About", "Core.PrivacyPolicy",
                               "Core.TermsAndCondition", "Core.FAQCategory", "Core.FAQ", "Core.Contact", "Core.Feedback",
-                              "Product.Country","Product.Tax",
+                              "Product.Country", "Product.Tax",
                               "Product.Unit", "Product.Category", "Product.SubCategory", "Product.PackagingType",
                               "Product.Product", "Product.ShippingAddress", "Product.Cart", "Product.CartItem",
                               "Product.Order", "Product.OrderItem", "Product.Payment"
@@ -560,7 +560,6 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
-
 # SPECTACULAR
 
 SPECTACULAR_SETTINGS = {
@@ -571,8 +570,6 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 
-
-
 # Set session engine
 # SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Use database-backed sessions
 # SESSION_COOKIE_AGE = 3600  # 5 minutes in seconds
@@ -580,3 +577,7 @@ SPECTACULAR_SETTINGS = {
 # SESSION_SAVE_EVERY_REQUEST = True
 # SESSION_COOKIE_SECURE = False  # Set to True only if using HTTPS
 # SESSION_COOKIE_HTTPONLY = True
+
+# Notification
+PUSH_NOTIFICATION_URL = 'https://fcm.googleapis.com/fcm/send'
+PUSH_NOTIFICATION_API_KEY = 'your-fcm-server-key'

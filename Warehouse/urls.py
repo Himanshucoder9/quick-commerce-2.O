@@ -15,6 +15,7 @@ from Warehouse.views import (
     ProductDisableView, ProductActiveView, PendingOrdersView, AvailableDriverListView,
     DeliveryAssignCreateView, AllWareHouseListView, WarehouseDashboardAPIView, SliderViewSet,
     SliderListView,
+    CategoryRetrieveView,
 )
 
 # Router configuration for viewsets
@@ -38,6 +39,7 @@ urlpatterns = [
     # Category endpoints
     path('simple-category/list/', SimpleCategoryListView.as_view(), name='simple-categories-list'),
     path('category/list/', CategoryListView.as_view(), name='categories-list'),
+    path('category/detail/<str:slug>/', CategoryRetrieveView.as_view(), name='categories-detail'),
 
     # Subcategory endpoints
     path('simple-subcategory/list/', SimpleSubCategoryListView.as_view(),

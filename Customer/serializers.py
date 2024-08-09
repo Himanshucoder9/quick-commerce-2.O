@@ -9,7 +9,7 @@ class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
         fields = (
-            "id", "customer", "customer_name", "customer_phone", "address_type", "building_name", "floor", "landmark",
+            "id", "customer_name", "customer_phone", "address_type", "building_name", "floor", "landmark",
             "latitude", "longitude", "full_address", "created_at", "updated_at")
 
 
@@ -33,17 +33,16 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = (
-            "id", "customer", "product", "created_at", "updated_at")
+            "id", "product", "created_at", "updated_at")
 
 
 class DetailFavoriteSerializer(serializers.ModelSerializer):
-    customer = CustomerProfileSerializer(read_only=True)
     product = SimpleProductSerializer(read_only=True)
 
     class Meta:
         model = Favorite
         fields = (
-            "id", "customer", "product", "created_at", "updated_at")
+            "id", "product", "created_at", "updated_at")
 
 
 class FullFavoriteSerializer(FavoriteSerializer):
@@ -108,6 +107,5 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ("id", "order", "razorpay_order_id", "razorpay_payment_id", "razorpay_payment_status", "amount",
-                  "payment_status",
-                  "payment_method")
+                  "payment_status", "payment_method")
         read_only_fields = ("razorpay_order_id", )
