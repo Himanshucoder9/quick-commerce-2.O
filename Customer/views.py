@@ -2,6 +2,7 @@ import logging
 import razorpay
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from geopy.distance import geodesic
 from rest_framework import status, request
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -9,9 +10,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from django.conf import settings
+
+from Auth.models import Driver
 from Customer.models import ShippingAddress, Favorite, Cart, CartItem, Order, OrderItem, Payment
 from Customer.serializers import ShippingAddressSerializer, FullShippingAddressSerializer, FullFavoriteSerializer, \
     CartSerializer, CartItemSerializer, OrderSerializer, FavoriteSerializer, DetailFavoriteSerializer
+from Notification.send_pushnotification import send_push_notification
 from Warehouse.models import Product
 from rest_framework.exceptions import NotFound
 
@@ -183,31 +187,82 @@ class CartItemDeleteAPIView(APIView):
 
 
 # Order Views
+# class OrderListCreateAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+#
+#     def get(self, request):
+#
+#         try:
+#             customer = self.request.user.customer
+#         except AttributeError:
+#             raise NotFound("Authenticated user is not a customer.")
+#
+#         orders = Order.objects.filter(customer=customer)
+#         message = "No orders available" if not orders else "Orders retrieved successfully"
+#         serializer = OrderSerializer(orders, many=True)
+#         return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
+#
+#     def post(self, request):
+#
+#         try:
+#             customer = self.request.user.customer
+#         except AttributeError:
+#             raise NotFound("Authenticated user is not a customer.")
+#
+#         data = request.data
+#
+#         shipping_address = get_object_or_404(ShippingAddress, id=data.get('shipping_address'), customer=customer)
+#         items = data.get('items', [])
+#
+#         if not items:
+#             return Response({"message": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         payment_method = data.get('payment_method')
+#         total_amount = data.get('total_amount')
+#         # item_price = data.get('item_price')
+#
+#         if payment_method not in ['Online', 'COD']:
+#             return Response({"message": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         with transaction.atomic():
+#             order = Order.objects.create(customer=customer, total_amount=total_amount,
+#                                          shipping_address=shipping_address, payment_method=payment_method)
+#
+#             for item_data in items:
+#                 product = get_object_or_404(Product, id=item_data.get('product'))
+#
+#                 if product.stock_quantity < item_data.get('quantity'):
+#                     return Response({"error": f"Not enough stock available for product ID {product.id}",
+#                                      "available_quantity": product.stock_quantity}, status=status.HTTP_400_BAD_REQUEST)
+#
+#                 OrderItem.objects.create(order=order, warehouse=product.warehouse, product=product,
+#                                          quantity=item_data.get('quantity'), item_price=item_data.get('item_price'))
+#
+#         return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
+#                         status=status.HTTP_201_CREATED)
 class OrderListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-
-        try:
-            customer = self.request.user.customer
-        except AttributeError:
-            raise NotFound("Authenticated user is not a customer.")
-
-        orders = Order.objects.filter(customer=customer)
-        message = "No orders available" if not orders else "Orders retrieved successfully"
-        serializer = OrderSerializer(orders, many=True)
-        return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
+    def get_nearby_drivers(self, location, max_distance_km=10):
+        drivers = Driver.objects.filter(is_free=True)
+        nearby_drivers = []
+        for driver in drivers:
+            driver_location = (driver.latitude, driver.longitude)
+            distance = geodesic(location, driver_location).km
+            if distance <= max_distance_km:
+                nearby_drivers.append(driver)
+                print(nearby_drivers)
+        return nearby_drivers
 
     def post(self, request):
-
         try:
             customer = self.request.user.customer
         except AttributeError:
             raise NotFound("Authenticated user is not a customer.")
 
         data = request.data
-
         shipping_address = get_object_or_404(ShippingAddress, id=data.get('shipping_address'), customer=customer)
+
         items = data.get('items', [])
 
         if not items:
@@ -215,14 +270,18 @@ class OrderListCreateAPIView(APIView):
 
         payment_method = data.get('payment_method')
         total_amount = data.get('total_amount')
-        # item_price = data.get('item_price')
 
         if payment_method not in ['Online', 'COD']:
             return Response({"message": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            order = Order.objects.create(customer=customer, total_amount=total_amount,
-                                         shipping_address=shipping_address, payment_method=payment_method)
+            order = Order.objects.create(
+                customer=customer,
+                total_amount=total_amount,
+                shipping_address=shipping_address,
+                payment_method=payment_method,
+                order_status="Pending"
+            )
 
             for item_data in items:
                 product = get_object_or_404(Product, id=item_data.get('product'))
@@ -231,11 +290,33 @@ class OrderListCreateAPIView(APIView):
                     return Response({"error": f"Not enough stock available for product ID {product.id}",
                                      "available_quantity": product.stock_quantity}, status=status.HTTP_400_BAD_REQUEST)
 
-                OrderItem.objects.create(order=order, warehouse=product.warehouse, product=product,
-                                         quantity=item_data.get('quantity'), item_price=item_data.get('item_price'))
+                OrderItem.objects.create(
+                    order=order,
+                    warehouse=product.warehouse,
+                    product=product,
+                    quantity=item_data.get('quantity'),
+                    item_price=item_data.get('item_price')
+                )
 
-        return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
-                        status=status.HTTP_201_CREATED)
+            # Get location of the shipping address
+            location = (product.warehouse.latitude, product.warehouse.longitude)
+
+            nearby_drivers = self.get_nearby_drivers(location)
+
+            if not nearby_drivers:
+                return Response({"message": "No available drivers nearby"}, status=status.HTTP_404_NOT_FOUND)
+
+            device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
+
+            # if device_tokens:
+            #     try:
+            #         response = send_push_notification(device_tokens, 'New Order Assigned',
+            #                                           f'You have been assigned a new order. Order Number: {order.order_number}')
+            #     except Exception as e:
+            #         return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
+                            status=status.HTTP_201_CREATED)
 
 
 class OrderRetrieveUpdateDeleteAPIView(APIView):
@@ -352,5 +433,3 @@ class PaymentAPIView(APIView):
         )
         return Response({'message': 'Cash payment initiated successfully', 'amount': amount},
                         status=status.HTTP_201_CREATED)
-
-

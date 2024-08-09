@@ -16,7 +16,7 @@ class DeliveryAddress(TimeStamp):
     status = models.CharField(max_length=20, choices=STATUS_CHOICE, default="pending", verbose_name=_("status"))
     driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, verbose_name=_("driver"))
     delivery_radius = models.FloatField(default=500, verbose_name=_("delivery radius"))
-    orders = models.ForeignKey(Order, related_name="deliveries", verbose_name=_("order"))
+    orders = models.ForeignKey(Order,on_delete=models.CASCADE, related_name="deliveries", verbose_name=_("order"))
     otp = models.CharField(max_length=6, blank=True, null=True, verbose_name=_("OTP"))
     otp_created_at = models.DateTimeField(blank=True, null=True, verbose_name=_("OTP created"))
 
