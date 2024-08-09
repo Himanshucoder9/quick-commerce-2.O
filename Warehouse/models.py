@@ -7,6 +7,7 @@ from Auth.models import WareHouse
 from Master.image_uploader import image_with_path
 from Master.models import TimeStamp, SEO
 from General.models import Country
+from Master.token_genrator import generate_token
 
 
 class Tax(TimeStamp):
@@ -169,6 +170,7 @@ class Product(SEO, TimeStamp):
     is_active = models.BooleanField(default=True, verbose_name=_("product active"))
     slug = AutoSlugField(populate_from="title", editable=True, unique=True, blank=True, null=True)
     is_deleted = models.BooleanField(default=False, verbose_name=_("is deleted"))
+    exp_date = models.DateField(verbose_name=_("expiry date"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("Product")
@@ -260,3 +262,44 @@ class Slider(TimeStamp):
 
     def __str__(self):
         return f"{self.text} - {self.device}"
+
+
+class WareHouseSupportTicket(TimeStamp):
+    TICKET_STATUS_CHOICES = (
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    )
+    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"))
+    subject = models.CharField(max_length=255, verbose_name=_("subject"))
+    description = models.TextField(_("description"))
+    status = models.CharField(max_length=20, choices=TICKET_STATUS_CHOICES, default='open', verbose_name=_("status"))
+    token = models.CharField(max_length=10, unique=True, default=generate_token, verbose_name=_("token"))
+    close_date = models.DateTimeField(blank=True, null=True, verbose_name=_("close date"))
+
+    class Meta:
+        verbose_name = _("Support Ticket")
+        verbose_name_plural = _("Support Tickets")
+
+    def __str__(self):
+        return f"Support for ticket #{self.token}"
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = generate_token()
+        super().save(*args, **kwargs)
+
+
+# Customer care
+class WareHouseSupportTicketResponse(TimeStamp):
+    ticket = models.ForeignKey(WareHouseSupportTicket, on_delete=models.CASCADE)
+    response_text = models.TextField()
+    responder = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        verbose_name = _("Support Ticket Response")
+        verbose_name_plural = _("Support Ticket Responses")
+
+    def __str__(self):
+        return f"Support for ticket #{self.ticket.token}"

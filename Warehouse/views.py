@@ -24,7 +24,7 @@ from Warehouse.serializers import (
     ProductSerializer, DetailProductSerializer,
     FullProductSerializer, ProductDisableSerializer,
     PendingOrderSerializer, AvailableDriverSerializer, DeliveryCreateSerializer, AllWarehouseSerializer,
-    SliderSerializer
+    SliderSerializer, CreateUpdateProductSerializer
 )
 from Warehouse.models import Tax, Unit, PackagingType, Category, SubCategory, Product, Slider
 
@@ -231,10 +231,18 @@ class SliderViewSet(ModelViewSet):
             raise NotFound(f"Slider not found.")
 
 
-class ProductViewSet(BaseModelViewSet):
+class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = FullProductSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ["get", "post", "patch", "delete"]
     lookup_field = "slug"
+
+    def get_queryset(self):
+        queryset = Product.objects.filter(is_deleted=False)
+        if not queryset.exists():
+            raise NotFound("Product not found.")
+        return queryset
 
     def get_object(self):
         slug = self.kwargs.get('slug')
@@ -244,9 +252,24 @@ class ProductViewSet(BaseModelViewSet):
         except Product.DoesNotExist:
             raise NotFound("Product not found.")
 
+    def perform_create(self):
+        CreateUpdateProductSerializer.save(warehouse=self.request.user.warehouse)
+
+    def destroy(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.is_deleted = True
+        self.object.save()
+        return Response(
+            {"detail": f"{self.queryset.model.__name__} deleted successfully."},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+    def perform_update(self, serializer):
+        CreateUpdateProductSerializer.save(warehouse=self.request.user.warehouse)
+
     def update(self, request, *args, **kwargs):
         self.object = self.get_object()
-        serializer = self.get_serializer(self.object, data=request.data, partial=True)
+        serializer = CreateUpdateProductSerializer(self.object, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({"message": "Product updated successfully.", "data": serializer.data})

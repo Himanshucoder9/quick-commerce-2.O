@@ -1,8 +1,12 @@
+import uuid
+
 from django.db import models
 from Master.models import TimeStamp
 from Auth.models import User, Customer, WareHouse
 from Master.myvalidator import mobile_validator
 from django.utils.translation import gettext_lazy as _
+
+from Master.token_genrator import generate_token
 from Warehouse.models import Product
 
 
@@ -167,3 +171,44 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment for Order #{self.order.order_number}"
+
+
+class CustomerSupportTicket(TimeStamp):
+    TICKET_STATUS_CHOICES = (
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    )
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name=_("customer"))
+    subject = models.CharField(max_length=255, verbose_name=_("subject"))
+    description = models.TextField(_("description"))
+    status = models.CharField(max_length=20, choices=TICKET_STATUS_CHOICES, default='open', verbose_name=_("status"))
+    token = models.CharField(max_length=10, unique=True, default=generate_token, verbose_name=_("token"))
+    close_date = models.DateTimeField(blank=True, null=True, verbose_name=_("close date"))
+
+    class Meta:
+        verbose_name = _("Support Ticket")
+        verbose_name_plural = _("Support Tickets")
+
+    def __str__(self):
+        return f"Support for ticket #{self.token}"
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = generate_token()
+        super().save(*args, **kwargs)
+
+
+# Customer care
+class CustomerSupportTicketResponse(TimeStamp):
+    ticket = models.ForeignKey(CustomerSupportTicket, on_delete=models.CASCADE)
+    response_text = models.TextField()
+    responder = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        verbose_name = _("Support Ticket Response")
+        verbose_name_plural = _("Support Ticket Responses")
+
+    def __str__(self):
+        return f"Support for ticket #{self.ticket.token}"

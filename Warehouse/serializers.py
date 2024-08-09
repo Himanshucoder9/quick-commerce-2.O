@@ -17,7 +17,8 @@ class BaseSerializer(serializers.ModelSerializer):
 class AllWarehouseSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = WareHouse
-        fields = ("id", "warehouse_no", "warehouse_name", "city", "approved", "is_active", "latitude", "longitude", "city")
+        fields = (
+        "id", "warehouse_no", "warehouse_name", "city", "approved", "is_active", "latitude", "longitude", "city")
 
 
 # Slider
@@ -65,10 +66,9 @@ class FullPackagingTypeSerializer(PackagingTypeSerializer):
 
 # Category Serializers
 class CategorySerializer(BaseSerializer):
-
     class Meta(BaseSerializer.Meta):
         model = Category
-        fields = ("id",  "title", "image", "slug")
+        fields = ("id", "title", "image", "slug")
 
 
 class FullCategorySerializer(CategorySerializer):
@@ -141,6 +141,11 @@ class DetailProductSerializer(BaseSerializer):
 class FullProductSerializer(ProductSerializer):
     class Meta(ProductSerializer.Meta):
         fields = "__all__"
+
+
+class CreateUpdateProductSerializer(ProductSerializer):
+    class Meta(ProductSerializer.Meta):
+        exclude = ("sku_no",)
 
 
 class ProductDisableSerializer(BaseSerializer):
