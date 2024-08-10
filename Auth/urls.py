@@ -13,7 +13,7 @@ from .views import (
     PasswordResetRequestView,
     PasswordResetVerifyView,
     ProfileDeleteRequestView,
-    ProfileDeleteVerifyView
+    ProfileDeleteVerifyView, UpdateDeviceTokenView
 )
 
 urlpatterns = [
@@ -42,4 +42,7 @@ urlpatterns = [
     # Delete Profile
     path('profile-delete/request/', ProfileDeleteRequestView.as_view(), name='delete-profile-request'),
     path('profile-delete/verify/', ProfileDeleteVerifyView.as_view(), name='delete-profile-verify'),
+
+    # Device Token
+    path('update-device-token/', UpdateDeviceTokenView.as_view(), name='update-device-token'),
 ]

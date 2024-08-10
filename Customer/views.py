@@ -304,7 +304,8 @@ class OrderListCreateAPIView(APIView):
             nearby_drivers = self.get_nearby_drivers(location)
 
             if not nearby_drivers:
-                return Response({"message": "No available drivers nearby"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'message': 'Order created successfully, But no driver found or available.', 'order': OrderSerializer(order).data},
+                            status=status.HTTP_201_CREATED)
 
             device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
 

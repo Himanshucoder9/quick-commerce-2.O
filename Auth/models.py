@@ -48,6 +48,7 @@ class User(AbstractUser, PermissionsMixin):
                                    help_text=_("Designates whether the user can log into this admin site."))
     is_active = models.BooleanField(default=False, verbose_name=_("active"),
                                     help_text=_("Unselect this instead of deleting accounts."))
+    device_token = models.CharField(max_length=255, verbose_name=_("Device Token"), blank=True, null=True)
 
     objects = UserManager()
 
@@ -177,7 +178,6 @@ class Driver(User):
     class Meta:
         verbose_name = _("Driver")
         verbose_name_plural = _("Drivers")
-
 
 
 class OTP(models.Model):

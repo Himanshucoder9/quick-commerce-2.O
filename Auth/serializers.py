@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from Auth.models import User, Customer, Driver, WareHouse
-from Master.myvalidator import mobile_validator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -20,7 +19,7 @@ class LoginSerializer(serializers.Serializer):
 class CustomerRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ("name", "email", "phone", "password")
+        fields = ("name", "email", "phone", "password", "device_token")
 
     def create(self, validated_data):
         customer = Customer(**validated_data)
@@ -41,7 +40,7 @@ class WareHouseRegisterSerializer(serializers.ModelSerializer):
         fields = (
             "name", "email", "phone", "dob", "gender", "profile", "warehouse_name", "license", "identity",
             "identity_document", "gst_no", "fssai_no", "operation_area", "warehouse_image", "warehouse_image_owner",
-            "building_name", "street_name", "zip", "city", "state", "full_address", "latitude", "longitude", "password",
+            "building_name", "street_name", "zip", "city", "state", "full_address", "latitude", "longitude", "password","device_token"
         )
 
     def create(self, validated_data):
@@ -74,7 +73,7 @@ class DriverRegisterSerializer(serializers.ModelSerializer):
         model = Driver
         fields = (
             "warehouse_assigned", "name", "email", "phone", "dob", "profile", "license", "license_front",
-            "license_back", "aadhar_no", "aadhar_document", "pan_no", "pan_document", "vehicle_no", "password"
+            "license_back", "aadhar_no", "aadhar_document", "pan_no", "pan_document", "vehicle_no", "password","device_token"
         )
 
     def create(self, validated_data):
@@ -92,3 +91,4 @@ class DriverProfileSerializer(serializers.ModelSerializer):
             "license_back", "aadhar_no", "aadhar_document", "pan_no", "pan_document", "vehicle_no", "is_active",
             "role", "approved", "is_free"
         )
+

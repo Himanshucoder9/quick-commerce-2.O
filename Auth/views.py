@@ -311,3 +311,19 @@ class ProfileDeleteVerifyView(APIView):
 
         user.delete()
         return Response({"detail": "User profile deleted successfully."}, status=status.HTTP_200_OK)
+
+
+class UpdateDeviceTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        device_token = request.data.get("device_token")
+
+        if not device_token:
+            return Response({"error": "Device token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.device_token = device_token
+        user.save()
+
+        return Response({"message": "Device token updated successfully."}, status=status.HTTP_200_OK)
