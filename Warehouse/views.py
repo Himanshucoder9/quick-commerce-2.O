@@ -797,3 +797,106 @@ class WarehouseDashboardAPIView(APIView):
 #         # Return a JSON response with the processed data
 #         return Response({"message": "Subcategories processed successfully.", "data": response_data},
 #                         status=status.HTTP_200_OK)
+
+
+import os
+import pandas as pd
+import requests
+from django.core.files.base import ContentFile
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.utils.text import slugify
+from .models import Product, WareHouse, Unit, Category, SubCategory, Country, Tax, PackagingType
+
+
+
+class BulkProductUploadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    http_method_names = ('post',)
+
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Determine file type
+            file_extension = os.path.splitext(file.name)[1].lower()
+            if file_extension in ['.xls', '.xlsx']:
+                df = pd.read_excel(file)
+            elif file_extension == '.csv':
+                df = pd.read_csv(file)
+            else:
+                return Response({"error": "Unsupported file format."}, status=status.HTTP_400_BAD_REQUEST)
+
+            for _, row in df.iterrows():
+                # Retrieve or generate SKU
+                sku_no = row.get('sku_no') or self.generate_sku()
+
+                # Get warehouse by authenticated user
+                warehouse = WareHouse.objects.get(user=request.user)
+
+                # Get other foreign key relationships by ID
+                size_unit = Unit.objects.get(id=row['size_unit'])
+                category = Category.objects.get(id=row['category'])
+                subcategory = SubCategory.objects.get(id=row['subcategory'])
+                country_origin = Country.objects.get(id=row['country_origin']) if row.get('country_origin') else None
+                packaging_type = PackagingType.objects.get(id=row['packaging_type'])
+                cgst = Tax.objects.get(id=row['cgst']) if row.get('cgst') else None
+                sgst = Tax.objects.get(id=row['sgst']) if row.get('sgst') else None
+
+                # Download images from URLs
+                image_fields = {}
+                for i in range(1, 6):
+                    image_url = row.get(f'image{i}')
+                    if image_url:
+                        image_content = requests.get(image_url).content
+                        image_name = f"{sku_no}_{i}.webp"
+                        image_fields[f'image{i}'] = ContentFile(image_content, image_name)
+
+                # Create or update the product
+                product = Product.objects.create(
+                    warehouse=warehouse,
+                    sku_no=sku_no,
+                    title=row['title'],
+                    size_unit=size_unit,
+                    size=row['size'],
+                    category=category,
+                    subcategory=subcategory,
+                    country_origin=country_origin,
+                    packaging_type=packaging_type,
+                    description=row.get('description'),
+                    cgst=cgst,
+                    sgst=sgst,
+                    price=row['price'],
+                    discount=row['discount'],
+                    stock_quantity=row['stock_quantity'],
+                    stock_unit=size_unit,
+                    reorder_level=row['reorder_level'],
+                    exp_date=row.get('exp_date')
+                )
+
+                # Set image fields
+                for field, image in image_fields.items():
+                    setattr(product, field, image)
+
+                # Set slug and availability based on stock quantity
+                product.slug = slugify(product.title)
+                product.is_available = product.stock_quantity > 0
+                product.is_active = any([product.image1, product.image2, product.image3, product.image4, product.image5])
+
+                product.save()
+
+            return Response({"message": "Products uploaded successfully."}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generate_sku(self):
+        last_product = Product.objects.order_by("-id").first()
+        if last_product and last_product.sku_no:
+            last_id = int(last_product.sku_no.replace("SKU", "")) if last_product.sku_no.startswith("SKU") else 0
+            return f"SKU{str(last_id + 1).zfill(9)}"
+        return "SKU000000001"

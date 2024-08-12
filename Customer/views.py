@@ -308,13 +308,15 @@ class OrderListCreateAPIView(APIView):
                             status=status.HTTP_201_CREATED)
 
             device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
-
-            # if device_tokens:
-            #     try:
-            #         response = send_push_notification(device_tokens, 'New Order Assigned',
-            #                                           f'You have been assigned a new order. Order Number: {order.order_number}')
-            #     except Exception as e:
-            #         return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(device_tokens)
+            if device_tokens:
+                try:
+                    response = send_push_notification(device_tokens, 'New Order Assigned',
+                                                      f'You have been assigned a new order. Order Number: {order.order_number}')
+                    
+                except Exception as e:
+                    print(f"Error sending push notification: {e}")
+                    return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
                             status=status.HTTP_201_CREATED)

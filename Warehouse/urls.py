@@ -16,6 +16,7 @@ from Warehouse.views import (
     DeliveryAssignCreateView, AllWareHouseListView, WarehouseDashboardAPIView, SliderViewSet,
     SliderListView,
     CategoryRetrieveView,
+    BulkProductUploadAPIView
 )
 
 # Router configuration for viewsets
@@ -61,6 +62,7 @@ urlpatterns = [
     path('product/active/<str:slug>/proid/<str:sku_no>/', ProductActiveView.as_view(), name='product-active'),
     # path('categories/bulk-upload/', CategoryBulkUploadView.as_view(), name='category-bulk-upload'),
     # path('subcategories/bulk-upload/', SubCategoryBulkUploadView.as_view(), name='subcategory-bulk-upload'),
+    path('products/bulk-upload/', BulkProductUploadAPIView.as_view(), name='bulk-product-upload'),
 
     # Slider
     path('slider/list/<int:warehouse_id>/', SliderListView.as_view(), name='slider-list'),

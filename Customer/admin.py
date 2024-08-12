@@ -10,7 +10,7 @@ from Auth.admin import ReadOnlyAdmin
 
 
 @admin.register(ShippingAddress)
-class ShippingAddressAdmin(ReadOnlyAdmin, ImportExportModelAdmin, admin.ModelAdmin):
+class ShippingAddressAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     fieldsets = (
         ('Info', {
             'fields': (
