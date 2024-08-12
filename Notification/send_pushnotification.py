@@ -1,5 +1,25 @@
+import google
 import requests
 from django.conf import settings
+from google.oauth2 import service_account
+
+
+def _get_access_token():
+    """Retrieve a valid access token that can be used to authorize requests.
+
+  :return: Access token.
+  """
+    credentials = service_account.Credentials.from_service_account_file(
+        'quickecommerce-a7b00-firebase-adminsdk-mglu2-1064ca47b2.json', scopes=[
+            "https://www.googleapis.com/auth/firebase.messaging",
+        ]
+    )
+    request = google.auth.transport.requests.Request()
+    credentials.refresh(request)
+    return credentials.token
+
+
+print(_get_access_token())
 
 
 def send_push_notification(device_tokens, title, message):
@@ -16,22 +36,28 @@ def send_push_notification(device_tokens, title, message):
 
     server_url = settings.PUSH_NOTIFICATION_URL
 
-    payload = {
-        'registration_ids': device_tokens,
-        'notification': {
-            'title': title,
-            'body': message
-        }
-    }
-
     headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'key={settings.PUSH_NOTIFICATION_API_KEY}'
+        'Content-Type': 'application/json; UTF-8',
+        'Authorization': 'Bearer ' + _get_access_token(),
     }
+    responses = []
 
-    response = requests.post(server_url, json=payload, headers=headers)
+    for token_value in device_tokens:
+        payload = {
+            "message": {
+                "notification": {
+                    "title": title,
+                    "body": message,
+                },
+                "token": token_value,
+            }
+        }
 
-    if response.status_code != 200:
-        raise Exception(f"Failed to send notification: {response.text}")
+        response = requests.post(server_url, json=payload, headers=headers)
 
-    return response
+        if response.status_code != 200:
+            raise Exception(f"Failed to send notification to token {token_value}: {response.text}")
+
+        responses.append(response.json())
+
+    return responses
