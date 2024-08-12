@@ -42,7 +42,7 @@ class NoChangeAdmin(admin.ModelAdmin):
 class BaseUserAdmin:
     fieldsets = (
         ("User Info", {
-            "fields": ("role", "name", "email", "phone", "dob", "gender", "profile",),
+            "fields": ("role", "name", "email", "phone", "dob", "gender", "profile", 'device_token'),
         }),
         ("Permissions", {
             "fields": ("is_superuser", "is_staff", "is_active",),
@@ -72,7 +72,7 @@ class CustomUserAdmin(BaseUserAdmin, UserAdmin):
 
     add_fieldsets = (
         (None, {
-            "fields": ("role", "name", "email", "phone", "gender", "dob", "profile", "password1", "password2",)
+            "fields": ("role", "name", "email", "phone", "gender", "dob", "profile", 'device_token', "password1", "password2",)
         }),
     )
 
@@ -105,7 +105,7 @@ class CustomAdminAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
 
 
 @admin.register(Customer)
-class CustomerAdmin(ReadOnlyAdmin, BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
+class CustomerAdmin( BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     list_display = ("name", "email", "phone", "gender", "_profile", "is_active",)
 
     add_fieldsets = (
@@ -168,7 +168,7 @@ class WareHouseAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
 
     add_fieldsets = (
         ("Personal Info", {
-            "fields": ("name", "email", "phone", "dob", "gender", "profile", "password1", "password2",)
+            "fields": ("name", "email", "phone", "dob", "gender", "profile", 'device_token', "password1", "password2",)
         }),
         ("WareHouse Info", {
             "fields": ("warehouse_no", "warehouse_name", "license", "gst_no", "fssai_no", "operation_area",
@@ -199,7 +199,7 @@ class WareHouseAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
 class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
     fieldsets = (
         ("Personal Info", {
-            "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile",),
+            "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", 'device_token'),
         }),
         ("Driver Info", {
             "fields": ("license", "license_front", "license_back", "vehicle_no", "latitude", "longitude", "is_free"),
@@ -244,7 +244,7 @@ class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
 
     add_fieldsets = (
         ("Personal Info", {
-            "fields": ("warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", "password1",
+            "fields": ("warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", 'device_token', "password1",
                        "password2",)
         }),
         ("Driver Info", {
