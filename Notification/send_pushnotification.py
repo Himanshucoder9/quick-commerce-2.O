@@ -2,6 +2,7 @@ import google
 import requests
 from django.conf import settings
 from google.oauth2 import service_account
+import google.auth.transport.requests
 
 
 def _get_access_token():
@@ -22,7 +23,7 @@ def _get_access_token():
 print(_get_access_token())
 
 
-def send_push_notification(device_tokens, title, message):
+def send_push_notification(device_tokens, title, message, image):
     """
     Sends a push notification to the provided device tokens using Firebase Cloud Messaging (FCM).
 
@@ -44,13 +45,18 @@ def send_push_notification(device_tokens, title, message):
 
     for token_value in device_tokens:
         payload = {
+            
             "message": {
                 "notification": {
                     "title": title,
                     "body": message,
+                    "image":image
+                    
                 },
                 "token": token_value,
-            }
+                
+            },
+            
         }
 
         response = requests.post(server_url, json=payload, headers=headers)

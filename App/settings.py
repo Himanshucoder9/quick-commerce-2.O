@@ -36,7 +36,6 @@ THIRD_PARTY_APPS = [
     'drf_spectacular',
     'corsheaders',
     'import_export',
-    'fcm_django',
     # 'django_filters',
     # 'django.contrib.admindocs',
 ]
