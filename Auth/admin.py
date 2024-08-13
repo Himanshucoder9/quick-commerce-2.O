@@ -202,7 +202,7 @@ class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
             "fields": ("role", "warehouse_assigned", "name", "email", "phone", "dob", "gender", "profile", 'device_token'),
         }),
         ("Driver Info", {
-            "fields": ("license", "license_front", "license_back", "vehicle_no", "latitude", "longitude", "is_free"),
+            "fields": ("license", "license_front", "license_back", "vehicle_no", "latitude", "longitude", "is_free", ),
         }),
         ("Identity Details", {
             "fields": ("aadhar_no", "pan_no", "aadhar_document", "pan_document", "address"),
@@ -248,7 +248,7 @@ class DriverAdmin(BaseUserAdmin, UserAdmin, ImportExportModelAdmin):
                        "password2",)
         }),
         ("Driver Info", {
-            "fields": ("license", "license_front", "license_back", "vehicle_no", "is_free"),
+            "fields": ("license", "license_front", "license_back", "vehicle_no", "is_free", 'latitude', 'longitude'),
         }),
         ("Identity Details", {
             "fields": ("aadhar_no", "pan_no", "aadhar_document", "pan_document", "address"),

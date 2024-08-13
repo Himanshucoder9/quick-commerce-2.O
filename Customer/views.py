@@ -307,21 +307,23 @@ class OrderListCreateAPIView(APIView):
                 return Response({'message': 'Order created successfully, But no driver found or available.', 'order': OrderSerializer(order).data},
                             status=status.HTTP_201_CREATED)
 
-            # device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
-            # print(device_tokens)
-            device_tokens = ['fQB7Q492TT-9mmXpD7x7Zt'
-                                  ':APA91bHC2ZzzcaG4sAB61xKdzFt9e2ANiHnvVDOhJ0UMjkYvjaLy6CoAZyjVZu4ez4S3VWu9anjNgtRLZlD1JaJbjFFthRxuJl_tYWQ_AQwyoR03PT4EXXsGmgzKqQwNW_XN-6OaveMX',
-                             'dPehQnHOQvanzZlDI6WM6z:APA91bFU7x0QpmKKYI5RCzWjJxOc07lZC1piAPHwepMv2kieoS4IPVGD-upDQdXFOpwzWTQcEaWWirydzN0hf-EVmbMhr14ReyLzI5MY2hgxt9M4AXvmyJ4c01JIlYnt4bcysPsFhPhQ']
-            send_push_notification(device_tokens, 'New Order Assigned',
-                                   f'You have been assigned a new order. Order Number: {order.order_number}')
-            # if device_tokens:
-            #     try:
-            #         response = send_push_notification(device_tokens, 'New Order Assigned',
-            #                                           f'You have been assigned a new order. Order Number: {order.order_number}')
-            #
-            #     except Exception as e:
-            #         print(f"Error sending push notification: {e}")
-            #         return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
+            print(device_tokens)
+            # device_tokens = ['fQB7Q492TT-9mmXpD7x7Zt'
+            #                       ':APA91bHC2ZzzcaG4sAB61xKdzFt9e2ANiHnvVDOhJ0UMjkYvjaLy6CoAZyjVZu4ez4S3VWu9anjNgtRLZlD1JaJbjFFthRxuJl_tYWQ_AQwyoR03PT4EXXsGmgzKqQwNW_XN-6OaveMX',
+            #                  'dPehQnHOQvanzZlDI6WM6z:APA91bFU7x0QpmKKYI5RCzWjJxOc07lZC1piAPHwepMv2kieoS4IPVGD-upDQdXFOpwzWTQcEaWWirydzN0hf-EVmbMhr14ReyLzI5MY2hgxt9M4AXvmyJ4c01JIlYnt4bcysPsFhPhQ']
+            # image = "https://portal.quickecommerce.m4bistro.in/media/core/siteconfig/logo/quicklogo2-removebg-preview_M6lWd5m.webp",
+            # send_push_notification(device_tokens, 'New Order Assigned',
+            #                        f'You have been assigned a new order. Order Number: {order.order_number}', image)
+            if device_tokens:
+                try:
+                    image = "https://portal.quickecommerce.m4bistro.in/media/core/siteconfig/logo/quicklogo2-removebg-preview_M6lWd5m.webp"
+                    response = send_push_notification(device_tokens, 'New Order Assigned',
+                                                      f'You have been assigned a new order. Order Number: {order.order_number}', image)
+            
+                except Exception as e:
+                    print(f"Error sending push notification: {e}")
+                    return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
                             status=status.HTTP_201_CREATED)
