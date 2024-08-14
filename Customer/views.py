@@ -10,11 +10,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from django.conf import settings
-
 from Auth.models import Driver
 from Customer.models import ShippingAddress, Favorite, Cart, CartItem, Order, OrderItem, Payment
 from Customer.serializers import ShippingAddressSerializer, FullShippingAddressSerializer, FullFavoriteSerializer, \
     CartSerializer, CartItemSerializer, OrderSerializer, FavoriteSerializer, DetailFavoriteSerializer
+from Notification.models import CustomerNotification, WareHouseNotification, DriverNotification
 from Notification.send_pushnotification import send_push_notification
 from Warehouse.models import Product
 from rest_framework.exceptions import NotFound
@@ -309,24 +309,52 @@ class OrderListCreateAPIView(APIView):
                                 status=status.HTTP_201_CREATED)
 
             device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
-            print(device_tokens)
-            # device_tokens = ['fQB7Q492TT-9mmXpD7x7Zt'
-            #                       ':APA91bHC2ZzzcaG4sAB61xKdzFt9e2ANiHnvVDOhJ0UMjkYvjaLy6CoAZyjVZu4ez4S3VWu9anjNgtRLZlD1JaJbjFFthRxuJl_tYWQ_AQwyoR03PT4EXXsGmgzKqQwNW_XN-6OaveMX',
-            #                  'dPehQnHOQvanzZlDI6WM6z:APA91bFU7x0QpmKKYI5RCzWjJxOc07lZC1piAPHwepMv2kieoS4IPVGD-upDQdXFOpwzWTQcEaWWirydzN0hf-EVmbMhr14ReyLzI5MY2hgxt9M4AXvmyJ4c01JIlYnt4bcysPsFhPhQ']
-            # image = "https://portal.quickecommerce.m4bistro.in/media/core/siteconfig/logo/quicklogo2-removebg-preview_M6lWd5m.webp",
-            # send_push_notification(device_tokens, 'New Order Assigned',
-            #                        f'You have been assigned a new order. Order Number: {order.order_number}', image)
             if device_tokens:
                 try:
-                    image = "https://portal.quickecommerce.m4bistro.in/media/core/siteconfig/logo/quicklogo2-removebg-preview_M6lWd5m.webp"
                     response = send_push_notification(device_tokens, 'New Order Assigned',
                                                       f'You have been assigned a new order. Order Number: {order.order_number}',
-                                                      image, order_number=order.order_number)
-
+                                                      data={
+                                                          "type": "driver_order",
+                                                          "order_number": order.order_number,
+                                                      })
+                    for driver in nearby_drivers:
+                        DriverNotification.objects.create(
+                            driver=driver,
+                            title='New Order Assigned',
+                            message=f'You have been assigned a new order. Order Number: {order.order_number}',
+                            data={
+                                "type": "driver_order",
+                                "order_number": order.order_number,
+                            }
+                        )
                 except Exception as e:
                     print(f"Error sending push notification: {e}")
                     return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+            send_push_notification([customer.device_token], 'Order Details',
+                                   f'Your order successfully placed. Order Number: {order.order_number}', data={
+                    "type": "customer_order",
+                    "order_number": order.order_number,
+                })
+            CustomerNotification.objects.create(
+                customer=customer,
+                title='Order Details',
+                message=f'Your order was successfully placed. Order Number: {order.order_number}',
+                data={
+                    "type": "customer_order",
+                    "order_number": order.order_number,
+                }
+            )
+            # send_push_notification([product.warehouse.device_token], 'New Order Received',
+            #                        f'New order Received. Order Number: {order.order_number}', data={
+            #                             "type": "warehouse_order",
+            #                             "order_number": order.order_number,
+            #                         })
+            # WareHouseNotification.objects.create(
+            #     warehouse=product.warehouse,
+            #     title='New Order Received',
+            #     message=f'New order received. Order Number: {order.order_number}',
+            # )
             return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
                             status=status.HTTP_201_CREATED)
 

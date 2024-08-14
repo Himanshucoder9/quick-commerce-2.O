@@ -19,11 +19,11 @@ def _get_access_token():
     credentials.refresh(request)
     return credentials.token
 
+#
+# print(_get_access_token())
 
-print(_get_access_token())
 
-
-def send_push_notification(device_tokens, title, message, image, order_number):
+def send_push_notification(device_tokens, title, message, image=None, data=None):
     """
     Sends a push notification to the provided device tokens using Firebase Cloud Messaging (FCM).
 
@@ -50,20 +50,14 @@ def send_push_notification(device_tokens, title, message, image, order_number):
                 "notification": {
                     "title": title,
                     "body": message,
-                    "image": image,
                 },
                 "token": token_value,
-                "data": {
-                    "type": "order",
-                    "order_number": order_number,
-                    "order": "Thank You",
-                    "order_id": "Bla Bla Bla",
-                    "status": "Delivered",
-
-                }
+                "data": data or {}
             },
 
         }
+        if image:
+            payload["message"]["notification"]["image"] = image
 
         response = requests.post(server_url, json=payload, headers=headers)
 

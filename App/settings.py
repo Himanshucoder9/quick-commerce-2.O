@@ -47,9 +47,9 @@ LOCAL_APPS = [
     'Customer',
     'Warehouse',
     'Delivery',
+    'Notification',
     # 'Product',
     # 'Vendor',
-    # 'Notification',
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS

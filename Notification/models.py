@@ -9,6 +9,8 @@ class UserNotification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("user"))
     title = models.CharField(max_length=255, verbose_name=_("title"))
     message = models.TextField(verbose_name=_("message"))
+    image = models.ImageField(upload_to='notification/images', verbose_name=_("image"), blank=True, null=True)
+    data = models.JSONField(verbose_name=_("data"), blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
     is_read = models.BooleanField(default=False, verbose_name=_("is read"))
 
@@ -25,6 +27,8 @@ class CustomerNotification(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name=_("customer"))
     title = models.CharField(max_length=255, verbose_name=_("title"))
     message = models.TextField(verbose_name=_("message"))
+    image = models.ImageField(upload_to='notification/images', verbose_name=_("image"), blank=True, null=True)
+    data = models.JSONField(verbose_name=_("data"), blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
     is_read = models.BooleanField(default=False, verbose_name=_("is read"))
 
@@ -41,6 +45,8 @@ class WareHouseNotification(models.Model):
     warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, verbose_name=_("warehouse"))
     title = models.CharField(max_length=255, verbose_name=_("title"))
     message = models.TextField(verbose_name=_("message"))
+    image = models.ImageField(upload_to='notification/images', verbose_name=_("image"), blank=True, null=True)
+    data = models.JSONField(verbose_name=_("data"), blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
     is_read = models.BooleanField(default=False, verbose_name=_("is read"))
 
@@ -57,6 +63,8 @@ class DriverNotification(models.Model):
     driver = models.ForeignKey(Driver, on_delete=models.CASCADE, verbose_name=_("driver"))
     title = models.CharField(max_length=255, verbose_name=_("title"))
     message = models.TextField(verbose_name=_("message"))
+    image = models.ImageField(upload_to='notification/images', verbose_name=_("image"), blank=True, null=True)
+    data = models.JSONField(verbose_name=_("data"), blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
     is_read = models.BooleanField(default=False, verbose_name=_("is read"))
 
