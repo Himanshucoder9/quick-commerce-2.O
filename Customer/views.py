@@ -304,8 +304,9 @@ class OrderListCreateAPIView(APIView):
             nearby_drivers = self.get_nearby_drivers(location)
 
             if not nearby_drivers:
-                return Response({'message': 'Order created successfully, But no driver found or available.', 'order': OrderSerializer(order).data},
-                            status=status.HTTP_201_CREATED)
+                return Response({'message': 'Order created successfully, But no driver found or available.',
+                                 'order': OrderSerializer(order).data},
+                                status=status.HTTP_201_CREATED)
 
             device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
             print(device_tokens)
@@ -319,8 +320,9 @@ class OrderListCreateAPIView(APIView):
                 try:
                     image = "https://portal.quickecommerce.m4bistro.in/media/core/siteconfig/logo/quicklogo2-removebg-preview_M6lWd5m.webp"
                     response = send_push_notification(device_tokens, 'New Order Assigned',
-                                                      f'You have been assigned a new order. Order Number: {order.order_number}', image)
-            
+                                                      f'You have been assigned a new order. Order Number: {order.order_number}',
+                                                      image, order_number=order.order_number)
+
                 except Exception as e:
                     print(f"Error sending push notification: {e}")
                     return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

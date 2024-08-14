@@ -15,7 +15,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -206,6 +206,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5500",
     "https://www.m4bistro.in",
+    "https://8bf4-2401-4900-8823-6c56-d52e-9588-97ae-d146.ngrok-free.app",
 ]
 
 # Jazzmin
