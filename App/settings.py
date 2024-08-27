@@ -211,9 +211,9 @@ CORS_ALLOWED_ORIGINS = [
 
 # Jazzmin
 JAZZMIN_SETTINGS = {
-    "site_title": "Quick Commerce Admin",
-    "site_header": "Quick Commerce Admin",
-    "site_brand": "Quick Commerce Admin",
+    "site_title": "Quick Commerce 2.0 Admin",
+    "site_header": "Quick Commerce 2.0 Admin",
+    "site_brand": "Quick Commerce 2.0 Admin",
     "site_logo": "assets/img/q1.png",
 
     "login_logo": "assets/img/q1.png",
@@ -224,10 +224,10 @@ JAZZMIN_SETTINGS = {
     # "site_icon": "frontend/assets/img/favicon.png",
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to Quick Commerce",
+    "welcome_sign": "Welcome to Quick Commerce 2.0",
 
     # Copyright on the footer
-    "copyright": "Quick Commerce",
+    "copyright": "Quick Commerce 2.0",
 
     # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
     "user_avatar": None,
@@ -305,7 +305,7 @@ JAZZMIN_SETTINGS = {
         "Core.Contact": "fas fa-comments",
         "Core.Feedback": "fas fa-star",
 
-        #Delivery
+        # Delivery
         "Delivery.DeliveryAddress": "fas fa-biking",
 
         # Product
@@ -564,9 +564,9 @@ CKEDITOR_5_CONFIGS = {
 # SPECTACULAR
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Quick Commerce API',
-    'DESCRIPTION': 'Quick Commerce API documentation',
-    'VERSION': '1.0.0.0 Beta',
+    'TITLE': 'Quick Commerce 2.0 API',
+    'DESCRIPTION': 'Quick Commerce 2.0 API documentation',
+    'VERSION': '2.0.0.0 Beta',
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
 }

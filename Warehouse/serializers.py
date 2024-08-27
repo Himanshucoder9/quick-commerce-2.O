@@ -182,3 +182,15 @@ class DeliveryCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['status'] = 'PROCESSING'
         return super().create(validated_data)
+
+
+# Bulk
+class ProductBulkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+    def create(self, validated_data):
+        sku_no = validated_data.get('sku_no')
+        product, created = Product.objects.update_or_create(sku_no=sku_no, defaults=validated_data)
+        return product
