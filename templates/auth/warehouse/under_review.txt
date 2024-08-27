@@ -1,0 +1,15 @@
+Registration Successful
+
+Dear {{ user }},
+
+Thank you for completing your vendor registration with Quick Commerce !
+
+Your profile is currently under review by our team to ensure it meets our quality standards. This review process typically takes few business days. Once your profile is approved, you will receive a notification, and you can start listing your products and services on our platform.
+
+In the meantime, if you have any questions or need further assistance, please do not hesitate to reach out to our support team. You can contact us via email at support@quickcommerce.com or call us at +918878627262.
+
+Thank you for choosing Quick Commerce. We look forward to a successful and prosperous partnership.
+
+Best regards,
+
+The Quick Commerce Team

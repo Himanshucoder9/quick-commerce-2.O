@@ -187,82 +187,31 @@ class CartItemDeleteAPIView(APIView):
 
 
 # Order Views
-# class OrderListCreateAPIView(APIView):
-#     permission_classes = [IsAuthenticated]
-#
-#     def get(self, request):
-#
-#         try:
-#             customer = self.request.user.customer
-#         except AttributeError:
-#             raise NotFound("Authenticated user is not a customer.")
-#
-#         orders = Order.objects.filter(customer=customer)
-#         message = "No orders available" if not orders else "Orders retrieved successfully"
-#         serializer = OrderSerializer(orders, many=True)
-#         return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
-#
-#     def post(self, request):
-#
-#         try:
-#             customer = self.request.user.customer
-#         except AttributeError:
-#             raise NotFound("Authenticated user is not a customer.")
-#
-#         data = request.data
-#
-#         shipping_address = get_object_or_404(ShippingAddress, id=data.get('shipping_address'), customer=customer)
-#         items = data.get('items', [])
-#
-#         if not items:
-#             return Response({"message": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         payment_method = data.get('payment_method')
-#         total_amount = data.get('total_amount')
-#         # item_price = data.get('item_price')
-#
-#         if payment_method not in ['Online', 'COD']:
-#             return Response({"message": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         with transaction.atomic():
-#             order = Order.objects.create(customer=customer, total_amount=total_amount,
-#                                          shipping_address=shipping_address, payment_method=payment_method)
-#
-#             for item_data in items:
-#                 product = get_object_or_404(Product, id=item_data.get('product'))
-#
-#                 if product.stock_quantity < item_data.get('quantity'):
-#                     return Response({"error": f"Not enough stock available for product ID {product.id}",
-#                                      "available_quantity": product.stock_quantity}, status=status.HTTP_400_BAD_REQUEST)
-#
-#                 OrderItem.objects.create(order=order, warehouse=product.warehouse, product=product,
-#                                          quantity=item_data.get('quantity'), item_price=item_data.get('item_price'))
-#
-#         return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
-#                         status=status.HTTP_201_CREATED)
 class OrderListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_nearby_drivers(self, location, max_distance_km=10):
-        drivers = Driver.objects.filter(is_free=True)
-        nearby_drivers = []
-        for driver in drivers:
-            driver_location = (driver.latitude, driver.longitude)
-            distance = geodesic(location, driver_location).km
-            if distance <= max_distance_km:
-                nearby_drivers.append(driver)
-                print(nearby_drivers)
-        return nearby_drivers
+    def get(self, request):
+
+        try:
+            customer = self.request.user.customer
+        except AttributeError:
+            raise NotFound("Authenticated user is not a customer.")
+
+        orders = Order.objects.filter(customer=customer)
+        message = "No orders available" if not orders else "Orders retrieved successfully"
+        serializer = OrderSerializer(orders, many=True)
+        return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
+
         try:
             customer = self.request.user.customer
         except AttributeError:
             raise NotFound("Authenticated user is not a customer.")
 
         data = request.data
-        shipping_address = get_object_or_404(ShippingAddress, id=data.get('shipping_address'), customer=customer)
 
+        shipping_address = get_object_or_404(ShippingAddress, id=data.get('shipping_address'), customer=customer)
         items = data.get('items', [])
 
         if not items:
@@ -270,18 +219,14 @@ class OrderListCreateAPIView(APIView):
 
         payment_method = data.get('payment_method')
         total_amount = data.get('total_amount')
+        # item_price = data.get('item_price')
 
         if payment_method not in ['Online', 'COD']:
             return Response({"message": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            order = Order.objects.create(
-                customer=customer,
-                total_amount=total_amount,
-                shipping_address=shipping_address,
-                payment_method=payment_method,
-                order_status="Pending"
-            )
+            order = Order.objects.create(customer=customer, total_amount=total_amount,
+                                         shipping_address=shipping_address, payment_method=payment_method)
 
             for item_data in items:
                 product = get_object_or_404(Product, id=item_data.get('product'))
@@ -290,73 +235,131 @@ class OrderListCreateAPIView(APIView):
                     return Response({"error": f"Not enough stock available for product ID {product.id}",
                                      "available_quantity": product.stock_quantity}, status=status.HTTP_400_BAD_REQUEST)
 
-                OrderItem.objects.create(
-                    order=order,
-                    warehouse=product.warehouse,
-                    product=product,
-                    quantity=item_data.get('quantity'),
-                    item_price=item_data.get('item_price')
-                )
+                OrderItem.objects.create(order=order, warehouse=product.warehouse, product=product,
+                                         quantity=item_data.get('quantity'), item_price=item_data.get('item_price'))
 
-            # Get location of the shipping address
-            location = (product.warehouse.latitude, product.warehouse.longitude)
+        return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
+                        status=status.HTTP_201_CREATED)
 
-            nearby_drivers = self.get_nearby_drivers(location)
 
-            if not nearby_drivers:
-                return Response({'message': 'Order created successfully, But no driver found or available.',
-                                 'order': OrderSerializer(order).data},
-                                status=status.HTTP_201_CREATED)
+# Device Token and Notification to Customer and Driver
+# class OrderListCreateAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-            device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
-            if device_tokens:
-                try:
-                    response = send_push_notification(device_tokens, 'New Order Assigned',
-                                                      f'You have been assigned a new order. Order Number: {order.order_number}',
-                                                      data={
-                                                          "type": "driver_order",
-                                                          "order_number": order.order_number,
-                                                      })
-                    for driver in nearby_drivers:
-                        DriverNotification.objects.create(
-                            driver=driver,
-                            title='New Order Assigned',
-                            message=f'You have been assigned a new order. Order Number: {order.order_number}',
-                            data={
-                                "type": "driver_order",
-                                "order_number": order.order_number,
-                            }
-                        )
-                except Exception as e:
-                    print(f"Error sending push notification: {e}")
-                    return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#     def get_nearby_drivers(self, location, max_distance_km=10):
+#         drivers = Driver.objects.filter(is_free=True)
+#         nearby_drivers = []
+#         for driver in drivers:
+#             driver_location = (driver.latitude, driver.longitude)
+#             distance = geodesic(location, driver_location).km
+#             if distance <= max_distance_km:
+#                 nearby_drivers.append(driver)
+#                 print(nearby_drivers)
+#         return nearby_drivers
 
-            send_push_notification([customer.device_token], 'Order Details',
-                                   f'Your order successfully placed. Order Number: {order.order_number}', data={
-                    "type": "customer_order",
-                    "order_number": order.order_number,
-                })
-            CustomerNotification.objects.create(
-                customer=customer,
-                title='Order Details',
-                message=f'Your order was successfully placed. Order Number: {order.order_number}',
-                data={
-                    "type": "customer_order",
-                    "order_number": order.order_number,
-                }
-            )
-            # send_push_notification([product.warehouse.device_token], 'New Order Received',
-            #                        f'New order Received. Order Number: {order.order_number}', data={
-            #                             "type": "warehouse_order",
-            #                             "order_number": order.order_number,
-            #                         })
-            # WareHouseNotification.objects.create(
-            #     warehouse=product.warehouse,
-            #     title='New Order Received',
-            #     message=f'New order received. Order Number: {order.order_number}',
-            # )
-            return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
-                            status=status.HTTP_201_CREATED)
+#     def post(self, request):
+#         try:
+#             customer = self.request.user.customer
+#         except AttributeError:
+#             raise NotFound("Authenticated user is not a customer.")
+
+#         data = request.data
+#         shipping_address = get_object_or_404(ShippingAddress, id=data.get('shipping_address'), customer=customer)
+
+#         items = data.get('items', [])
+
+#         if not items:
+#             return Response({"message": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         payment_method = data.get('payment_method')
+#         total_amount = data.get('total_amount')
+
+#         if payment_method not in ['Online', 'COD']:
+#             return Response({"message": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         with transaction.atomic():
+#             order = Order.objects.create(
+#                 customer=customer,
+#                 total_amount=total_amount,
+#                 shipping_address=shipping_address,
+#                 payment_method=payment_method,
+#                 order_status="Pending"
+#             )
+
+#             for item_data in items:
+#                 product = get_object_or_404(Product, id=item_data.get('product'))
+
+#                 if product.stock_quantity < item_data.get('quantity'):
+#                     return Response({"error": f"Not enough stock available for product ID {product.id}",
+#                                      "available_quantity": product.stock_quantity}, status=status.HTTP_400_BAD_REQUEST)
+
+#                 OrderItem.objects.create(
+#                     order=order,
+#                     warehouse=product.warehouse,
+#                     product=product,
+#                     quantity=item_data.get('quantity'),
+#                     item_price=item_data.get('item_price')
+#                 )
+
+#             # Get location of the shipping address
+#             location = (product.warehouse.latitude, product.warehouse.longitude)
+
+#             nearby_drivers = self.get_nearby_drivers(location)
+
+#             if not nearby_drivers:
+#                 return Response({'message': 'Order created successfully, But no driver found or available.',
+#                                  'order': OrderSerializer(order).data},
+#                                 status=status.HTTP_201_CREATED)
+
+#             device_tokens = [driver.device_token for driver in nearby_drivers if driver.device_token]
+#             if device_tokens:
+#                 try:
+#                     response = send_push_notification(device_tokens, 'New Order Assigned',
+#                                                       f'You have been assigned a new order. Order Number: {order.order_number}',
+#                                                       data={
+#                                                           "type": "driver_order",
+#                                                           "order_number": order.order_number,
+#                                                       })
+#                     for driver in nearby_drivers:
+#                         DriverNotification.objects.create(
+#                             driver=driver,
+#                             title='New Order Assigned',
+#                             message=f'You have been assigned a new order. Order Number: {order.order_number}',
+#                             data={
+#                                 "type": "driver_order",
+#                                 "order_number": order.order_number,
+#                             }
+#                         )
+#                 except Exception as e:
+#                     print(f"Error sending push notification: {e}")
+#                     return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#             send_push_notification([customer.device_token], 'Order Details',
+#                                    f'Your order successfully placed. Order Number: {order.order_number}', data={
+#                     "type": "customer_order",
+#                     "order_number": order.order_number,
+#                 })
+#             CustomerNotification.objects.create(
+#                 customer=customer,
+#                 title='Order Details',
+#                 message=f'Your order was successfully placed. Order Number: {order.order_number}',
+#                 data={
+#                     "type": "customer_order",
+#                     "order_number": order.order_number,
+#                 }
+#             )
+#             # send_push_notification([product.warehouse.device_token], 'New Order Received',
+#             #                        f'New order Received. Order Number: {order.order_number}', data={
+#             #                             "type": "warehouse_order",
+#             #                             "order_number": order.order_number,
+#             #                         })
+#             # WareHouseNotification.objects.create(
+#             #     warehouse=product.warehouse,
+#             #     title='New Order Received',
+#             #     message=f'New order received. Order Number: {order.order_number}',
+#             # )
+#             return Response({'message': 'Order created successfully', 'order': OrderSerializer(order).data},
+#                             status=status.HTTP_201_CREATED)
 
 
 class OrderRetrieveUpdateDeleteAPIView(APIView):
