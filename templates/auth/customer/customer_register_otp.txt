@@ -1,0 +1,11 @@
+
+Dear {{user}},
+
+Your OTP for registration at Quick Commerce is: {{otp}}
+
+Please use this OTP to complete your registration process.
+
+This OTP is valid for next 10 minutes.
+
+Thank you,
+Team Quick Commerce

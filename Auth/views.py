@@ -9,7 +9,6 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-
 from Auth.otp_generator import generate_otp, verify_otp, verify_profile_delete_otp
 from Auth.models import User, Customer, WareHouse, OTP, Driver, ForgetOTP
 from Auth.serializers import (
@@ -17,6 +16,12 @@ from Auth.serializers import (
     LoginSerializer, WareHouseRegisterSerializer,
     WareHouseProfileSerializer, DriverRegisterSerializer,
     DriverProfileSerializer
+)
+from Notification.phone_sms import (
+    send_customer_register_otp, send_warehouse_register_otp
+)
+from Notification.email_notification import (
+    send_customer_register_email_otp, send_warehouse_register_email_otp
 )
 
 
@@ -31,11 +36,9 @@ class UserRegisterView(APIView):
             return user, serializer
         return None, serializer.errors
 
-    def send_otp(self, user):
+    def create_otp(self, user):
         otp = generate_otp()
         OTP.objects.create(user=user, otp=otp)
-        # Uncomment to send OTP via SMS or email
-        # send_otp_customer(user, otp)
         return otp
 
 
@@ -48,7 +51,10 @@ class CustomerRegisterView(UserRegisterView):
     def post(self, request):
         user, errors = self.create_user(CustomerRegisterSerializer, role='CU')
         if user:
-            otp = self.send_otp(user)
+            otp = self.create_otp(user)
+            send_customer_register_otp(user, otp)
+            if user.email:
+                send_customer_register_email_otp(user, otp)
             return Response({
                 'message': 'User registered and OTP sent successfully!',
                 'OTP': otp
@@ -176,12 +182,16 @@ class WarehouseRegisterView(UserRegisterView):
     def post(self, request):
         user, errors = self.create_user(WareHouseRegisterSerializer, role='WH')
         if user:
-            otp = self.send_otp(user)
+            otp = self.create_otp(user)
+            send_warehouse_register_otp(user, otp)
+            if user.email:
+                send_warehouse_register_email_otp(user, otp)
             return Response({
                 'message': 'Warehouse registered and OTP sent successfully!',
                 'OTP': otp
             }, status=status.HTTP_201_CREATED)
         return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class WarehouseProfileView(UserProfileView):

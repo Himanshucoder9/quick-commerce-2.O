@@ -1,0 +1,11 @@
+
+Dear {{user}},
+
+Your OTP for delivery at Quick Commerce is: {{otp}}
+
+Please use this OTP to complete your delivery process.
+
+This OTP is valid for next 10 minutes.
+
+Thank you,
+Quick Commerce

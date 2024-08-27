@@ -1,0 +1,15 @@
+Vendor Approval confirmed
+
+Dear {{user}},
+
+We are delighted to inform you that your vendor status has been approved at Quick Commerce.
+
+To access your vendor dashboard, please use the following link:
+
+{{base_url}}/auth/login/
+
+Thank you for choosing Quick Commerce. We are excited to work with you.
+
+Best regards,
+
+The Quick Commerce Team
